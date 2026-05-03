@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Uniphore · ADCB Pricing Configurator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #f4f6f9;
+    --surface:   #eceef3;
+    --panel:     #ffffff;
+    --border:    #dde0ea;
+    --border2:   #c4c9d8;
+    --cyan:      #006f6f;
+    --cyan-dim:  #008080;
+    --cyan-glow: rgba(0,111,111,0.07);
+    --green:     #1a8c60;
+    --green-dim: rgba(26,140,96,0.10);
+    --amber:     #b87200;
+    --amber-dim: rgba(184,114,0,0.10);
+    --purple:    #5e32c0;
+    --white:     #ffffff;
+    --muted:     #7a8192;
+    --muted2:    #3e4558;
+    --label:     #9298a8;
+    --black:     #1a1d28;
+    --mono:      'DM Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+    --display:   'Syne', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--black); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  body::before { display: none; }
+
+  /* HEADER */
+  header {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: 0.12em; }
+  .logo svg { width: 26px; height: 26px; }
+  .hbadges { display: flex; gap: 8px; }
+  .hbadge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; border: 1px solid var(--border2); color: var(--muted); }
+  .hbadge.hi { border-color: var(--cyan-dim); color: var(--cyan); }
+
+  /* MAIN GRID */
+  main {
+    position: relative; z-index: 5;
+    max-width: 1440px; margin: 0 auto;
+    padding: 40px 40px 80px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .page-intro { grid-column: 1 / -1; margin-bottom: 4px; }
+  .eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; color: var(--cyan); text-transform: uppercase; margin-bottom: 8px; }
+  h1 { font-family: var(--display); font-size: clamp(24px, 2.6vw, 38px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 8px; color: var(--black); }
+  .subtitle { font-size: 13px; color: var(--muted2); font-weight: 300; max-width: 520px; line-height: 1.65; }
+
+  /* CARDS */
+  .left-panel { display: flex; flex-direction: column; gap: 18px; }
+  .right-panel { display: flex; flex-direction: column; gap: 18px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border2); }
+  .card-label {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-label .num { font-size: 9px; color: var(--cyan); border: 1px solid var(--cyan-dim); padding: 1px 5px; border-radius: 3px; }
+
+  /* CHANNEL GROUP */
+  .grp-label {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--label); margin-top: 14px; margin-bottom: 4px;
+  }
+  .grp-label:first-of-type { margin-top: 0; }
+
+  .channel-row { border-bottom: 1px solid var(--border); }
+  .channel-row:last-child { border-bottom: none; }
+
+  /* checkbox */
+  .ch-label {
+    display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    cursor: pointer; user-select: none;
+  }
+  .ch-label input[type=checkbox] { display: none; }
+  .ch-box {
+    width: 15px; height: 15px;
+    border: 1.5px solid var(--border2); border-radius: 3px;
+    flex-shrink: 0; position: relative;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface);
+  }
+  .ch-label input:checked ~ .ch-box { background: var(--cyan); border-color: var(--cyan); }
+  .ch-label.em input:checked ~ .ch-box { background: var(--amber); border-color: var(--amber); }
+  .ch-label.di input:checked ~ .ch-box { background: var(--purple); border-color: var(--purple); }
+  .ch-box::after {
+    content: ''; display: none;
+    position: absolute; left: 3px; top: 1px;
+    width: 5px; height: 8px;
+    border: 2px solid #000; border-top: none; border-left: none;
+    transform: rotate(45deg);
+  }
+  .ch-label input:checked ~ .ch-box::after { display: block; }
+  .ch-name { font-size: 12.5px; font-weight: 500; color: var(--muted2); transition: color 0.2s; flex: 1; }
+  .ch-label:has(input:checked) .ch-name { color: var(--black); }
+  .ch-tag {
+    font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 3px;
+    letter-spacing: 0.08em; flex-shrink: 0;
+  }
+  .ch-tag.v { background: var(--cyan-glow);              color: var(--cyan);   border: 1px solid var(--cyan-dim); }
+  .ch-tag.e { background: var(--amber-dim);              color: var(--amber);  border: 1px solid rgba(240,165,0,0.3); }
+  .ch-tag.d { background: rgba(155,109,255,0.08);        color: var(--purple); border: 1px solid rgba(155,109,255,0.3); }
+
+  /* Slider reveal */
+  .ch-slider {
+    overflow: hidden; max-height: 0; opacity: 0;
+    margin-left: 25px;
+    transition: max-height 0.32s ease, opacity 0.22s ease, padding 0.22s ease;
+    padding-bottom: 0;
+  }
+  .ch-slider.open { max-height: 90px; opacity: 1; padding-bottom: 10px; }
+
+  .sl-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+  .sl-name { font-size: 11px; color: var(--label); }
+  .sl-val { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--cyan); }
+  .sl-val.em { color: var(--amber); }
+  .sl-val.di { color: var(--purple); }
+
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 2px;
+    background: #c8ccd8; border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range].vr::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--cyan); cursor: pointer; box-shadow: 0 0 8px rgba(0,200,200,0.5); transition: transform 0.15s;
+  }
+  input[type=range].vr::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type=range].er::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--amber); cursor: pointer; box-shadow: 0 0 8px rgba(240,165,0,0.5); transition: transform 0.15s;
+  }
+  input[type=range].er::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type=range].dr::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--purple); cursor: pointer; box-shadow: 0 0 8px rgba(155,109,255,0.5); transition: transform 0.15s;
+  }
+  input[type=range].dr::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .rh-row { display: flex; justify-content: space-between; margin-top: 4px; }
+  .rh { font-family: var(--mono); font-size: 9.5px; color: var(--label); }
+
+  /* VOICE SUMMARY */
+  .vs-box {
+    margin-top: 14px;
+    background: var(--cyan-glow); border: 1px solid var(--cyan-dim); border-radius: 8px; padding: 12px 14px;
+  }
+  .vs-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .vs-row:last-child { margin-bottom: 0; }
+  .vs-lbl { font-size: 11px; color: var(--muted); font-weight: 300; }
+  .vs-num { font-family: var(--mono); font-size: 13px; color: var(--cyan); font-weight: 500; }
+
+  /* TIER */
+  .tier-hd {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px; margin-bottom: 8px;
+    padding: 7px 10px; border-radius: 6px;
+    border: 1px solid var(--border2); background: var(--surface);
+  }
+  .tier-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: var(--amber); box-shadow: 0 0 5px var(--amber);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .tier-lbl { font-family: var(--mono); font-size: 10.5px; color: var(--muted2); }
+  .tier-lbl strong { color: var(--cyan); }
+
+  .tier-ladder { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; }
+  .tier-step {
+    text-align: center; padding: 7px 3px;
+    border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .tier-step.active { border-color: var(--cyan); background: var(--cyan-glow); }
+  .tier-step.active .ts-r { color: var(--cyan); }
+  .ts-v { font-family: var(--mono); font-size: 8.5px; color: var(--label); margin-bottom: 3px; line-height: 1.3; }
+  .ts-r { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--muted2); transition: color 0.25s; }
+
+  /* PLATFORM TOGGLES */
+  .tog-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .tog-row:last-child { border-bottom: none; }
+  .tog-name { font-size: 12.5px; font-weight: 500; color: var(--muted2); margin-bottom: 2px; }
+  .tog-desc { font-size: 11px; color: var(--label); line-height: 1.4; }
+  .tog-sw { position: relative; width: 36px; height: 19px; flex-shrink: 0; margin-left: 12px; }
+  .tog-sw input { opacity: 0; width: 0; height: 0; }
+  .tog-track {
+    position: absolute; inset: 0; background: var(--border2); border-radius: 10px;
+    cursor: pointer; transition: background 0.25s;
+  }
+  .tog-track::before {
+    content: ''; position: absolute; width: 13px; height: 13px; border-radius: 50%;
+    background: var(--muted); top: 3px; left: 3px; transition: transform 0.25s, background 0.25s;
+  }
+  .tog-sw input:checked + .tog-track { background: var(--cyan-dim); }
+  .tog-sw input:checked + .tog-track::before { transform: translateX(17px); background: var(--cyan); }
+
+  /* MIX BAR */
+  .mix-bar { height: 5px; border-radius: 3px; display: flex; gap: 2px; overflow: hidden; }
+  .mix-bar-seg { height: 100%; border-radius: 2px; transition: width 0.3s; }
+  .mix-lbls { display: flex; justify-content: space-between; margin-top: 6px; }
+  .mix-lbl { font-family: var(--mono); font-size: 10px; }
+
+  /* PROPOSAL CARDS */
+  .proposals-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pc {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px;
+    position: relative; overflow: hidden; transition: transform 0.18s;
+  }
+  .pc::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .pc.p2 { border-color: var(--cyan-dim); }
+  .pc.p2::before { background: linear-gradient(90deg, var(--cyan), var(--green)); }
+  .pc.p1::before { background: linear-gradient(90deg, var(--muted), var(--border2)); }
+  .pc:hover { transform: translateY(-2px); }
+  .pc-eye { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px; }
+  .p2 .pc-eye { color: var(--cyan); } .p1 .pc-eye { color: var(--muted); }
+  .pc-name { font-family: var(--display); font-size: 14px; font-weight: 700; line-height: 1.3; margin-bottom: 14px; color: var(--black); }
+  .pc-tot { font-family: var(--mono); font-size: 28px; font-weight: 500; line-height: 1; margin-bottom: 3px; transition: color 0.3s; }
+  .p2 .pc-tot { color: var(--cyan); } .p1 .pc-tot { color: var(--black); }
+  .pc-tot-lbl { font-size: 10.5px; color: var(--muted); font-weight: 300; margin-bottom: 14px; }
+  .pc-rows { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+  .pc-row { display: flex; justify-content: space-between; align-items: center; }
+  .pc-rl { font-size: 11px; color: var(--muted); font-weight: 300; }
+  .pc-rv { font-family: var(--mono); font-size: 11.5px; color: var(--muted2); }
+  .pc-rv.hi { color: var(--cyan); } .pc-rv.ok { color: var(--green); } .pc-rv.na { color: var(--label); font-style: italic; }
+
+  /* DELTA CARD */
+  .delta-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 24px; display: flex; align-items: center; gap: 20px;
+  }
+  .d-num { font-family: var(--mono); font-size: 36px; font-weight: 500; line-height: 1; flex-shrink: 0; transition: color 0.3s; }
+  .d-title { font-family: var(--display); font-size: 14px; font-weight: 700; margin-bottom: 5px; color: var(--black); }
+  .d-desc { font-size: 12px; color: var(--muted2); line-height: 1.65; font-weight: 300; }
+  .d-desc strong { color: var(--black); font-weight: 600; }
+
+  /* SCENARIO PILLS */
+  .sc-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .sc-lbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--label); margin-bottom: 12px; }
+  .pills { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .pill { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; cursor: pointer; transition: border-color 0.2s, background 0.2s; text-align: left; }
+  .pill:hover { border-color: var(--border2); background: var(--surface); }
+  .pill.active { border-color: var(--cyan); background: var(--cyan-glow); }
+  .p-name { font-size: 11px; font-weight: 500; color: var(--muted2); margin-bottom: 3px; }
+  .pill.active .p-name { color: var(--cyan); }
+  .p-desc { font-family: var(--mono); font-size: 9.5px; color: var(--label); line-height: 1.4; }
+
+  /* COMPARISON TABLE */
+  .ct { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .ct-head { display: grid; grid-template-columns: 2.2fr 1.1fr 1.1fr 1fr; padding: 11px 18px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .cth { font-family: var(--mono); font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--label); }
+  .cth.c2 { color: var(--cyan-dim); } .cth.r { text-align: right; }
+  .ct-row { display: grid; grid-template-columns: 2.2fr 1.1fr 1.1fr 1fr; padding: 11px 18px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.12s; }
+  .ct-row:last-child { border-bottom: none; }
+  .ct-row:hover { background: var(--surface); }
+  .ct-row.tot { background: rgba(0,111,111,0.05); border-top: 1px solid var(--border2); }
+  .cc { font-size: 12px; color: var(--muted2); font-weight: 300; }
+  .cc.nm { font-size: 12.5px; color: var(--black); font-weight: 400; }
+  .cc.nm .sub { font-size: 10px; color: var(--muted); font-weight: 300; margin-top: 1px; }
+  .cc.mo { font-family: var(--mono); font-size: 11.5px; text-align: right; }
+  .cc.p2v { color: var(--cyan); } .cc.p1v { color: var(--muted2); }
+  .cc.sv { color: var(--green); font-family: var(--mono); font-size: 11.5px; text-align: right; }
+  .cc.lv { color: var(--amber); font-family: var(--mono); font-size: 11.5px; text-align: right; }
+  .cc.ok { color: var(--green); } .cc.na { color: var(--label); font-style: italic; }
+  .cc.bold { font-weight: 600; color: var(--black); }
+  .cc.tp2 { color: var(--cyan);   font-family: var(--mono); font-size: 13px; text-align: right; font-weight: 600; }
+  .cc.tp1 { color: var(--muted2); font-family: var(--mono); font-size: 13px; text-align: right; font-weight: 600; }
+  .cc.tsv { font-size: 12px; text-align: right; font-weight: 600; font-family: var(--mono); }
+
+  /* RECOMMENDATION */
+  .rec { border: 1px solid var(--cyan-dim); background: var(--cyan-glow); border-radius: 10px; padding: 18px 22px; display: flex; align-items: flex-start; gap: 14px; transition: border-color 0.3s, background 0.3s; }
+  .rec-icon { font-size: 20px; flex-shrink: 0; line-height: 1; margin-top: 1px; }
+  .rec-title { font-family: var(--display); font-size: 13.5px; font-weight: 700; color: var(--cyan); margin-bottom: 5px; transition: color 0.3s; }
+  .rec-body { font-size: 12px; color: var(--muted2); line-height: 1.65; font-weight: 300; }
+  .rec-body strong { color: var(--black); font-weight: 600; }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+  .card,.pc,.delta-card,.sc-card,.ct,.rec { animation: fadeUp 0.45s ease backwards; }
+  .left-panel .card:nth-child(1) { animation-delay:0.05s; }
+  .left-panel .card:nth-child(2) { animation-delay:0.10s; }
+  .pc.p2 { animation-delay:0.07s; } .pc.p1 { animation-delay:0.12s; }
+  .delta-card { animation-delay:0.16s; } .sc-card { animation-delay:0.20s; }
+  .ct { animation-delay:0.24s; } .rec { animation-delay:0.28s; }
+
+  @keyframes flash { from { opacity:0.3; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+  .flash { animation: flash 0.3s ease; }
+
+  @media (max-width:960px)  { main { grid-template-columns:1fr; } .page-intro { grid-column:1; } .s-col { grid-column:1; } }
+  @media (max-width:640px)  { main { padding:24px 16px 60px; } header { padding:14px 20px; } .proposals-row { grid-template-columns:1fr; } .pills { grid-template-columns:1fr 1fr; } .tier-ladder { grid-template-columns:repeat(2,1fr); } }
+
+  /* ── TIER TABLE ── */
+  .tier-table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .tier-table-head {
+    display: grid; grid-template-columns: 1fr 1fr;
+    padding: 7px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--label);
+  }
+  .tier-table-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    background: var(--panel);
+    transition: background 0.2s;
+  }
+  .tier-table-row:last-child { border-bottom: none; }
+  .tier-table-row.active-tier { background: var(--cyan-glow); }
+  .tier-vol-wrap { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .tier-rate-wrap { display: flex; align-items: center; gap: 3px; justify-content: flex-end; }
+  .tier-vol-lbl { font-family: var(--mono); font-size: 11px; color: var(--muted2); white-space: nowrap; }
+  .tier-dollar { font-family: var(--mono); font-size: 12px; color: var(--muted2); }
+  .tier-per { font-family: var(--mono); font-size: 10px; color: var(--label); }
+
+  .tier-input {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: var(--black); background: transparent;
+    border: none; outline: none;
+    padding: 0; width: 72px; text-align: right;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    -moz-appearance: textfield;
+  }
+  .tier-input::-webkit-inner-spin-button,
+  .tier-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .tier-input.rate-input { width: 44px; color: var(--cyan); }
+
+  /* Editing state */
+  .tier-editing .tier-table-row { background: #fffbf0; }
+  .tier-editing .tier-input:not([disabled]) {
+    background: #ffffff;
+    border: 1px solid var(--amber);
+    border-radius: 4px;
+    padding: 2px 5px;
+    color: var(--black);
+  }
+  .tier-editing .tier-input.rate-input:not([disabled]) { color: var(--amber); border-color: var(--amber); }
+  #tierEditBtn.editing {
+    background: var(--amber); border-color: var(--amber);
+    color: #fff; font-weight: 600;
+  }
+  #tierEditBtn.editing:hover { background: #a06000; }
+
+
+
+
+  /* ══════════════════════════════════════════════════════════
+     PRINT / PDF STYLES
+     ══════════════════════════════════════════════════════════ */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body { background: #fff !important; color: #1a1d28 !important; margin: 0; }
+    body::before { display: none !important; }
+    header, .left-panel, .scenario-card, .rec, #pdfBtn { display: none !important; }
+    main { display: block !important; padding: 0 !important; max-width: 100% !important; }
+    .page-intro { margin-bottom: 16px !important; }
+    .right-panel { display: block !important; }
+    .proposals-row { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 16px !important; margin-bottom: 16px !important; }
+    .pc, .delta-card, .ct { break-inside: avoid !important; page-break-inside: avoid !important; }
+    .delta-card { margin-bottom: 16px !important; }
+
+    /* Show PDF snapshot section */
+    #pdfSnapshot { display: block !important; }
+  }
+
+  /* PDF snapshot — hidden in browser, shown only in print */
+  #pdfSnapshot { display: none; }
+
+
+  /* ── PRICING PROPOSAL SUMMARY ── */
+  .summary-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+  }
+  .summary-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  .summary-eyebrow {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    padding-top: 3px;
+  }
+  .summary-delta {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    transition: color 0.3s;
+    color: var(--muted2);
+  }
+  .summary-line {
+    font-size: 13px;
+    color: var(--muted2);
+    line-height: 1.7;
+    font-weight: 300;
+    min-height: 1.1em;
+  }
+  .summary-line strong { color: var(--black); font-weight: 600; }
+  .summary-line .tag-rev { color: var(--cyan); font-weight: 600; }
+  .summary-line .tag-cur { color: var(--muted2); font-weight: 600; }
+  .summary-line .tag-save { color: var(--green); font-weight: 600; }
+  .summary-line .tag-cost { color: var(--amber); font-weight: 600; }
+
+  /* PBI spotlight */
+  .pbi-spotlight {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .pbi-spot-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 10px;
+  }
+  .pbi-spot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .pbi-spot-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 12px;
+  }
+  .pbi-spot-cell.highlight {
+    background: var(--green-dim);
+    border-color: rgba(26,140,96,0.4);
+  }
+  .pbi-sc-lbl {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--label);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .pbi-sc-val {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--muted2);
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .pbi-sc-val.green { color: var(--green); }
+  .pbi-sc-val.cyan  { color: var(--cyan);  }
+  .pbi-sc-sub {
+    font-size: 10px;
+    color: var(--label);
+    font-weight: 300;
+  }
+
+
+  /* ── SECTION 3 ── */
+  #section3 { animation: fadeUp 0.5s ease 0.35s backwards; }
+
+
+  /* ── TWO-COLUMN INPUT LAYOUT ── */
+  .s-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-self: start;
+  }
+  .col-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--label);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-num {
+    font-size: 9px;
+    color: var(--cyan);
+    border: 1px solid var(--cyan-dim);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* Remove old left/right panel gap since columns replace them */
+  .left-panel, .right-panel { gap: 0; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 26 26" fill="none">
+      <path d="M13 2L24 8.5V19.5L13 26L2 19.5V8.5L13 2Z" stroke="#00c8c8" stroke-width="1.4" fill="none"/>
+      <path d="M13 6L20 10V18L13 22L6 18V10L13 6Z" stroke="#008888" stroke-width="1.1" fill="none"/>
+      <path d="M13 10L17 12.5V17.5L13 20L9 17.5V12.5L13 10Z" fill="#00c8c8" opacity="0.35"/>
+    </svg>
+    UNIPHORE
+  </div>
+  <div class="hbadges">
+    <div class="hbadge hi">ADCB Proposal</div>
+    <div class="hbadge">Confidential · Apr 2026</div>
+    <button onclick="downloadPDF()" id="pdfBtn" style="
+      display:flex;align-items:center;gap:7px;
+      font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+      padding:6px 14px;border-radius:6px;cursor:pointer;
+      border:1px solid var(--cyan-dim);background:var(--cyan-glow);
+      color:var(--cyan);font-weight:600;
+      transition:background 0.2s,border-color 0.2s;
+    " onmouseover="this.style.background='rgba(0,111,111,0.14)'" onmouseout="this.style.background='var(--cyan-glow)'">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Download PDF
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="page-intro">
+    <div class="eyebrow">Pricing Configurator</div>
+    <h1>ADCB Self Serve 2.0</h1>
+    <p class="subtitle">Enable channels, set monthly volumes and adjust platform options to model the total investment across both proposals in real time.</p>
+  </div>
+
+  <!-- LEFT -->
+  <div class="s-col" id="col-s1">
+  <div class="col-eyebrow"><span class="col-num">01</span>Channel Selection &amp; Monthly Volumes</div>
+<!-- CHANNEL SELECTION CARD -->
+    <div class="card">
+      <div class="card-label"><span class="num">01</span> Channel Selection &amp; Monthly Volumes</div>
+
+      <!-- Voice channels -->
+      <div class="grp-label">Voice AI Agent</div>
+
+      <div class="channel-row">
+        <label class="ch-label" for="chk-pbi">
+          <input type="checkbox" id="chk-pbi" checked/>
+          <span class="ch-box"></span>
+          <span class="ch-name">Phone Banking Inbound</span>
+          <span class="ch-tag v">VOICE</span>
+        </label>
+        <div class="ch-slider open" id="sl-pbi">
+          <div class="sl-head"><span class="sl-name">Monthly calls</span><span class="sl-val" id="val-pbi">150k</span></div>
+          <input type="range" class="vr" id="rng-pbi" min="0" max="500000" step="5000" value="360000"/>
+          <div class="rh-row"><span class="rh">0</span><span class="rh">500k</span></div>
+        </div>
+      </div>
+
+      <div class="channel-row">
+        <label class="ch-label" for="chk-out">
+          <input type="checkbox" id="chk-out"/>
+          <span class="ch-box"></span>
+          <span class="ch-name">Outbound Calls</span>
+          <span class="ch-tag v">VOICE</span>
+        </label>
+        <div class="ch-slider" id="sl-out">
+          <div class="sl-head"><span class="sl-name">Monthly calls</span><span class="sl-val" id="val-out">0</span></div>
+          <input type="range" class="vr" id="rng-out" min="0" max="400000" step="5000" value="0"/>
+          <div class="rh-row"><span class="rh">0</span><span class="rh">400k</span></div>
+        </div>
+      </div>
+
+      <div class="channel-row">
+        <label class="ch-label" for="chk-cin">
+          <input type="checkbox" id="chk-cin"/>
+          <span class="ch-box"></span>
+          <span class="ch-name">Collections Inbound</span>
+          <span class="ch-tag v">VOICE</span>
+        </label>
+        <div class="ch-slider" id="sl-cin">
+          <div class="sl-head"><span class="sl-name">Monthly calls</span><span class="sl-val" id="val-cin">120k</span></div>
+          <input type="range" class="vr" id="rng-cin" min="0" max="300000" step="5000" value="120000"/>
+          <div class="rh-row"><span class="rh">0</span><span class="rh">300k</span></div>
+        </div>
+      </div>
+
+      <div class="channel-row">
+        <label class="ch-label" for="chk-cout">
+          <input type="checkbox" id="chk-cout"/>
+          <span class="ch-box"></span>
+          <span class="ch-name">Collections Outbound</span>
+          <span class="ch-tag v">VOICE</span>
+        </label>
+        <div class="ch-slider" id="sl-cout">
+          <div class="sl-head"><span class="sl-name">Monthly calls</span><span class="sl-val" id="val-cout">0</span></div>
+          <input type="range" class="vr" id="rng-cout" min="0" max="300000" step="5000" value="0"/>
+          <div class="rh-row"><span class="rh">0</span><span class="rh">300k</span></div>
+        </div>
+      </div>
+
+      <!-- Email + Digital channels -->
+      <div class="grp-label" style="margin-top:16px;">Digital AI Agent</div>
+
+      <div class="channel-row">
+        <label class="ch-label di" for="chk-digital">
+          <input type="checkbox" id="chk-digital"/>
+          <span class="ch-box"></span>
+          <span class="ch-name">Digital AI Agent</span>
+          <span class="ch-tag d">DIGITAL</span>
+        </label>
+        <div class="ch-slider" id="sl-digital">
+          <div class="sl-head"><span class="sl-name">Monthly sessions</span><span class="sl-val di" id="val-digital">0</span></div>
+          <input type="range" class="dr" id="rng-digital" min="0" max="300000" step="5000" value="0"/>
+          <div class="rh-row"><span class="rh">0</span><span class="rh">300k</span></div>
+        </div>
+      </div>
+
+      <!-- VOICE SUMMARY + TIER -->
+      <div class="vs-box">
+        <div class="vs-row"><span class="vs-lbl">Voice calls / month</span><span class="vs-num" id="voiceMo">270,000</span></div>
+        <div class="vs-row"><span class="vs-lbl">Digital sessions / month</span><span class="vs-num" id="digitalMo" style="color:var(--purple);">0</span></div>
+        <div class="vs-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;">
+          <span class="vs-lbl" style="font-weight:600;color:var(--muted2);">Total monthly interactions</span>
+          <span class="vs-num" style="font-size:15px;" id="totalMo">370,000</span>
+        </div>
+        <div class="vs-row">
+          <span class="vs-lbl">Total annual interactions</span>
+          <span class="vs-num" id="totalAnn">4,440,000</span>
+        </div>
+      </div>
+
+      <!-- Tier indicator -->
+      <div class="tier-hd">
+        <div class="tier-dot" id="tierDot"></div>
+        <div class="tier-lbl" id="tierLbl">Tier 1 · ≤360k/mo · <strong>$0.30/call</strong></div>
+      </div>
+
+      <!-- Tier pricing table with edit button -->
+      <div id="tierBlock" style="margin-bottom:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);">Tier Pricing (Revised Proposal)</span>
+          <button id="tierEditBtn" onclick="toggleTierEdit()" style="
+            font-family:var(--mono);font-size:10px;letter-spacing:0.08em;
+            padding:4px 12px;border-radius:5px;cursor:pointer;
+            border:1px solid var(--border2);background:var(--surface);
+            color:var(--muted2);transition:all 0.2s;
+          ">✎ Edit</button>
+        </div>
+        <div class="tier-table">
+          <!-- Header -->
+          <div class="tier-table-head">
+            <span>Monthly Volume</span>
+            <span style="text-align:right;">Rate / Call</span>
+          </div>
+          <!-- Row 1 -->
+          <div class="tier-table-row" id="trow1">
+            <div class="tier-vol-wrap">
+              <span class="tier-vol-lbl">≤</span>
+              <input class="tier-input" id="thr1" type="number" value="360000" min="1" step="10000" disabled/>
+              <span class="tier-vol-lbl">/mo</span>
+            </div>
+            <div class="tier-rate-wrap">
+              <span class="tier-dollar">$</span>
+              <input class="tier-input rate-input" id="rate1" type="number" value="0.30" min="0.01" max="1" step="0.01" disabled/>
+              <span class="tier-per">/call</span>
+            </div>
+          </div>
+          <!-- Row 2 -->
+          <div class="tier-table-row" id="trow2">
+            <div class="tier-vol-wrap">
+              <span class="tier-vol-lbl" id="thr1_display" style="font-family:var(--mono);font-size:11px;color:var(--muted2);">360,001</span>
+              <span class="tier-vol-lbl"> – ≤</span>
+              <input class="tier-input" id="thr2" type="number" value="500000" min="1" step="10000" disabled/>
+              <span class="tier-vol-lbl">/mo</span>
+            </div>
+            <div class="tier-rate-wrap">
+              <span class="tier-dollar">$</span>
+              <input class="tier-input rate-input" id="rate2" type="number" value="0.25" min="0.01" max="1" step="0.01" disabled/>
+              <span class="tier-per">/call</span>
+            </div>
+          </div>
+          <!-- Row 3 -->
+          <div class="tier-table-row" id="trow3">
+            <div class="tier-vol-wrap">
+              <span class="tier-vol-lbl" id="thr2_display" style="font-family:var(--mono);font-size:11px;color:var(--muted2);">500,001</span>
+              <span class="tier-vol-lbl"> – ≤</span>
+              <input class="tier-input" id="thr3" type="number" value="600000" min="1" step="10000" disabled/>
+              <span class="tier-vol-lbl">/mo</span>
+            </div>
+            <div class="tier-rate-wrap">
+              <span class="tier-dollar">$</span>
+              <input class="tier-input rate-input" id="rate3" type="number" value="0.20" min="0.01" max="1" step="0.01" disabled/>
+              <span class="tier-per">/call</span>
+            </div>
+          </div>
+          <!-- Row 4 -->
+          <div class="tier-table-row" id="trow4">
+            <div class="tier-vol-wrap">
+              <span class="tier-vol-lbl">&gt;</span>
+              <span class="tier-vol-lbl" id="thr3_display" style="font-family:var(--mono);font-size:11px;color:var(--muted2);">600,000</span>
+              <span class="tier-vol-lbl">/mo</span>
+            </div>
+            <div class="tier-rate-wrap">
+              <span class="tier-dollar">$</span>
+              <input class="tier-input rate-input" id="rate4" type="number" value="0.15" min="0.01" max="1" step="0.01" disabled/>
+              <span class="tier-per">/call</span>
+            </div>
+          </div>
+        </div><!-- /tier-table -->
+      </div>
+
+      <!-- Additional negotiated discount + partner margin -->
+      <div style="padding:14px 16px;background:var(--cyan-glow);border:1px solid var(--cyan-dim);border-radius:8px;">
+
+        <!-- Discount slider -->
+        <div class="sl-head" style="margin-bottom:8px;">
+          <span style="font-size:12.5px;font-weight:600;color:var(--muted2);">Additional Discount <span style="font-size:10px;font-weight:400;color:var(--amber);">(To be approved by ELT and above)</span></span>
+          <span class="sl-val" style="color:var(--green);font-size:15px;" id="discVal">0%</span>
+        </div>
+        <input type="range" class="vr" id="rng-disc" min="0" max="30" step="1" value="0"/>
+        <div class="rh-row" style="margin-bottom:14px;"><span class="rh">0% (no discount)</span><span class="rh">30% off</span></div>
+
+        <!-- Partner margin slider -->
+        <div style="border-top:1px solid var(--border);padding-top:14px;">
+          <div class="sl-head" style="margin-bottom:8px;">
+            <span style="font-size:12.5px;font-weight:600;color:var(--muted2);">Partner margin</span>
+            <span class="sl-val" style="color:var(--purple);font-size:15px;" id="marginVal">0%</span>
+          </div>
+          <input type="range" class="vr" id="rng-margin" min="0" max="30" step="1" value="30"
+                 style="background:linear-gradient(to right, var(--purple) 0%, var(--border2) 0%);"/>
+          <div class="rh-row"><span class="rh">0%</span><span class="rh">+30%</span></div>
+        </div>
+
+        <!-- Effective rates (Voice only) -->
+        <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);margin-bottom:8px;">Effective Revised Proposal rates after discount &amp; margin</div>
+          <div id="effRatesGrid"></div>
+        </div>
+      </div>
+
+    </div>
+</div>
+
+  
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SECTION 3 — CONTRACT TRANSITION & PRICING TIMELINE
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="section3" style="grid-column:1/-1;margin-top:12px;">
+
+    <!-- Section header -->
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px;">
+      <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.22em;text-transform:uppercase;color:var(--cyan);">Section 03</div>
+      <h2 style="font-family:var(--display);font-size:clamp(20px,2vw,28px);font-weight:800;letter-spacing:-0.02em;color:var(--black);">Contract Transition &amp; Pricing Timeline</h2>
+    </div>
+
+    <!-- Context cards row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:24px;">
+
+      <!-- Legacy contract -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;border-left:3px solid #b87200;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#b87200;margin-bottom:8px;">Existing Contract</div>
+        <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;">Self Serve Legacy</div>
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;">Uniphore · Currently active</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-top:1px solid var(--border);">
+          <span style="font-size:11px;color:var(--muted);">Rate per call</span>
+          <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:#b87200;">$0.071</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border);">
+          <span style="font-size:11px;color:var(--muted);">Valid until</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--black);">30 Oct 2028</span>
+        </div>
+      </div>
+
+      <!-- New contract -->
+      <div style="background:var(--panel);border:1px solid var(--cyan-dim);border-radius:10px;padding:18px 20px;border-left:3px solid var(--cyan);">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:8px;">New Contract</div>
+        <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;">Voice AI — Next Gen</div>
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;">Uniphore · Proposed</div>
+        <div style="padding:8px 0;border-top:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+            <span style="font-size:11px;color:var(--muted);">Effective rate / call</span>
+            <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--cyan);" id="s3NegRate">—</span>
+          </div>
+          <div id="s3RateBreakdown" style="font-family:var(--mono);font-size:9.5px;color:var(--label);text-align:right;line-height:1.6;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border);">
+          <span style="font-size:11px;color:var(--muted);">Term</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--black);">1 May 2026 – 30 Apr 2031</span>
+        </div>
+      </div>
+
+      <!-- Overlap period -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;border-left:3px solid var(--green);">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Contract Overlap</div>
+        <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;">Dual-Contract Period</div>
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:10px;">Special pricing applies</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-top:1px solid var(--border);">
+          <span style="font-size:11px;color:var(--muted);">Overlap duration</span>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--green);">29 months</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border);">
+          <span style="font-size:11px;color:var(--muted);">Period</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--black);">May 2026 – Oct 2028</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Timeline visualisation -->
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 24px;margin-bottom:20px;">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);margin-bottom:18px;">Contract &amp; Pricing Timeline</div>
+
+      <!-- Gantt-style timeline -->
+      <div id="timelineCanvas" style="position:relative;"></div>
+    </div>
+
+    <!-- Pricing phases table + bar chart side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+
+      <!-- Phase pricing table -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div style="background:var(--surface);padding:12px 18px;font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);border-bottom:1px solid var(--border);">
+          Pricing Phases — Effective Rate per Call
+        </div>
+        <div id="phaseTable"></div>
+      </div>
+
+      <!-- Bar chart -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);margin-bottom:16px;">Effective Rate per Call by Phase</div>
+        <div id="phaseChart" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
+    </div>
+
+    <!-- Annual cost impact table -->
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div style="background:var(--surface);padding:12px 18px;font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);border-bottom:1px solid var(--border);">
+        Annual Cost Impact — Based on Configured Call Volume
+      </div>
+      <div id="annualCostTable"></div>
+    </div>
+
+  </div><!-- /section3 -->
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SECTION 4 — PROFESSIONAL SERVICES
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="section4" style="grid-column:1/-1;margin-top:8px;">
+
+    <!-- Section header -->
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px;">
+      <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.22em;text-transform:uppercase;color:var(--cyan);">Section 04</div>
+      <h2 style="font-family:var(--display);font-size:clamp(18px,2vw,26px);font-weight:800;letter-spacing:-0.02em;color:var(--black);">Professional Services</h2>
+    </div>
+
+    <!-- Two service cards + margin note row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+
+      <!-- One-Time Fee card -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-left:3px solid #5e32c0;border-radius:10px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#5e32c0;margin-bottom:8px;">One-Time Fee</div>
+        <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;">Deployment &amp; Integration</div>
+        <div style="font-size:11px;color:var(--muted2);margin-bottom:14px;">English · Hindi · Arabic</div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+            <span style="font-size:11px;color:var(--muted);">Base cost</span>
+            <span style="font-family:monospace;font-size:13px;color:var(--muted2);" id="s4OtfBase">$210,000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+            <span style="font-size:11px;color:var(--green);">After ELT disc <span id="s4OtfDiscPct">−0%</span></span>
+            <span style="font-family:monospace;font-size:13px;color:var(--green);" id="s4OtfAfterDisc">$210,000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+            <span style="font-size:11px;color:var(--purple);">+<span id="s4OtfMarginPct2">30</span>% net margin</span>
+            <span style="font-family:monospace;font-size:16px;font-weight:700;color:var(--black);" id="s4OtfSell">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--border);padding-top:5px;margin-top:5px;">
+            <span style="font-size:11px;color:var(--muted);">Partner margin $</span>
+            <span style="font-family:monospace;font-size:12px;font-weight:600;color:var(--green);" id="s4OtfMarginAmt">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PM card -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-left:3px solid #b87200;border-radius:10px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#b87200;margin-bottom:8px;">One-Time Fee</div>
+        <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;">Partner Project Management</div>
+        <div style="font-size:11px;color:var(--muted2);margin-bottom:14px;">Partner-added · implementation oversight</div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--muted);">Base cost</span>
+            <span style="font-family:monospace;font-size:15px;font-weight:700;color:#b87200;">$66,500</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--muted);">Partner sell price</span>
+            <span style="font-family:monospace;font-size:17px;font-weight:700;color:var(--black);" id="s4PmSell">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span style="font-size:11px;color:var(--muted);">Partner margin $</span>
+            <span style="font-family:monospace;font-size:13px;font-weight:600;color:var(--green);" id="s4PmMarginAmt">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Services card -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:10px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:8px;">Annual · 5-Year Contract</div>
+        <div style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;">Performance Services</div>
+        <div style="font-size:11px;color:var(--muted2);margin-bottom:14px;">AI Fine-Tuning &amp; Optimisation</div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+            <span style="font-size:11px;color:var(--muted);">Base cost / year</span>
+            <span style="font-family:monospace;font-size:13px;color:var(--muted2);" id="s4PerfBase">$120,000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+            <span style="font-size:11px;color:var(--green);">After ELT disc <span id="s4PerfDiscPct">−0%</span></span>
+            <span style="font-family:monospace;font-size:13px;color:var(--green);" id="s4PerfAfterDisc">$120,000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+            <span style="font-size:11px;color:var(--purple);">+<span id="s4PerfMarginPct2">30</span>% net margin</span>
+            <span style="font-family:monospace;font-size:16px;font-weight:700;color:var(--black);" id="s4PerfSell">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--border);padding-top:5px;margin-top:5px;">
+            <span style="font-size:11px;color:var(--muted);">Partner margin $ / yr</span>
+            <span style="font-family:monospace;font-size:12px;font-weight:600;color:var(--green);" id="s4PerfMarginAmt">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Margin context card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);margin-bottom:10px;">Applied Margin</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+          <span style="font-family:monospace;font-size:28px;font-weight:700;color:var(--black);" id="s4MarginPct">30%</span>
+          <span style="font-size:11px;color:var(--muted2);">net margin on sell price</span>
+        </div>
+        <div style="font-size:11px;color:var(--label);margin-bottom:14px;">From Section 1 partner margin slider</div>
+        <div style="font-size:11px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:8px 10px;line-height:1.6;">
+          Formula: (cost × (1−disc)) ÷ (1−margin%) = sell price<br/>
+          PM fee: cost ÷ (1−margin%) only — no ELT discount<br/>
+          Total Y1 sell = <strong id="s4ExTotal">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- S4 Discount slider -->
+    <div style="padding:14px 16px;background:rgba(240,165,0,0.06);border:1px solid rgba(240,165,0,0.35);border-radius:8px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:12.5px;font-weight:600;color:var(--muted2);">Additional Discount <span style="font-size:10px;font-weight:400;color:var(--amber);">(To be approved by ELT and above)</span></span>
+        <span style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--green);" id="s4DiscVal">0%</span>
+      </div>
+      <input type="range" class="er" id="rng-s4disc" min="0" max="30" step="1" value="0"/>
+      <div class="rh-row" style="margin-bottom:8px;"><span class="rh">0% (no discount)</span><span class="rh">30% off</span></div>
+      <div style="font-family:var(--mono);font-size:9.5px;color:var(--amber);margin-top:6px;">
+        ⚠ Applies only to Deployment &amp; Integration and Performance Services. Partner PM fee is excluded.
+      </div>
+    </div>
+
+        <!-- 5-Year Services Cost Table -->
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div style="background:var(--surface);padding:12px 18px;font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);border-bottom:1px solid var(--border);">
+        5-Year Professional Services — ADCB Payout Schedule
+      </div>
+      <div id="s4YearTable"></div>
+    </div>
+
+  </div><!-- /section4 -->
+
+
+
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       SECTION 5 — CONSOLIDATED ADCB INVESTMENT SUMMARY (YoY)
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="section5" style="grid-column:1/-1;margin-top:8px;">
+
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px;">
+      <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.22em;text-transform:uppercase;color:var(--cyan);">Section 05</div>
+      <h2 style="font-family:var(--display);font-size:clamp(18px,2vw,26px);font-weight:800;letter-spacing:-0.02em;color:var(--black);">Total ADCB Investment — Year on Year</h2>
+    </div>
+
+    <!-- KPI row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;" id="s5KpiRow"></div>
+
+    <!-- YoY table + bar chart -->
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;">
+
+      <!-- Table -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div style="background:var(--surface);padding:12px 18px;font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);border-bottom:1px solid var(--border);">
+          5-Year ADCB Payout — All Streams
+        </div>
+        <div id="s5Table"></div>
+      </div>
+
+      <!-- Bar chart -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--label);margin-bottom:16px;">Annual Payout by Year</div>
+        <div id="s5Chart" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;" id="s5Legend"></div>
+      </div>
+
+    </div>
+  </div><!-- /section5 -->
+
+  <!-- PDF SNAPSHOT — populated by downloadPDF(), visible only in print -->
+  <div id="pdfSnapshot"></div>
+
+</main>
+
+
+<script>
+// ── RATE TABLES ────────────────────────────────────────────
+const EMAIL_RATE = { p2:{s:0.20,m:0.30,c:0.50}, p1:{s:0.40,m:0.60,c:0.80} };
+
+// P1 fixed contract values
+const P1_VOICE_MONTHLY = 360000;   // 360k calls/mo fixed
+const P1_VOICE_RATE    = 0.429;    // $0.429/call fixed
+const SVC_OTF_COST  = 210000;  // Deployment (3 languages)
+const SVC_PM_COST   = 66500;   // Partner PM base cost (sell price $95k at 30% margin)
+const SVC_PERF_COST = 120000;  // AI fine-tuning & optimisation / year
+const SVC_YEARS     = 5;       // Contract term
+
+// Dynamic tier thresholds and rates — read from inputs
+function getTierConfig() {
+  return {
+    t1: { cap: +($('thr1')?.value||360000), rate: +($('rate1')?.value||0.30) },
+    t2: { cap: +($('thr2')?.value||500000), rate: +($('rate2')?.value||0.25) },
+    t3: { cap: +($('thr3')?.value||600000), rate: +($('rate3')?.value||0.20) },
+    t4: {                                    rate: +($('rate4')?.value||0.15) },
+  };
+}
+
+function voiceTier(mo) {
+  const tc = getTierConfig();
+  if (mo <= tc.t1.cap) return { rate:tc.t1.rate, tier:1, lbl:`Tier 1 · ≤${tc.t1.cap.toLocaleString()}/mo · <strong>$${tc.t1.rate.toFixed(2)}/call</strong>` };
+  if (mo <= tc.t2.cap) return { rate:tc.t2.rate, tier:2, lbl:`Tier 2 · ${(tc.t1.cap+1).toLocaleString()}–${tc.t2.cap.toLocaleString()}/mo · <strong>$${tc.t2.rate.toFixed(2)}/call</strong>` };
+  if (mo <= tc.t3.cap) return { rate:tc.t3.rate, tier:3, lbl:`Tier 3 · ${(tc.t2.cap+1).toLocaleString()}–${tc.t3.cap.toLocaleString()}/mo · <strong>$${tc.t3.rate.toFixed(2)}/call</strong>` };
+  return                      { rate:tc.t4.rate, tier:4, lbl:`Tier 4 · >${tc.t3.cap.toLocaleString()}/mo · <strong>$${tc.t4.rate.toFixed(2)}/call</strong>` };
+}
+const TIER_COLS = {1:'#f0a500',2:'#00c8c8',3:'#1dd68c',4:'#1dd68c'};
+
+// ── UTILS ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt  = n => '$' + Math.round(n).toLocaleString('en-US');
+const fmtK = n => n >= 1e6 ? (n/1e6).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(0)+'k' : String(n);
+const pct  = p => p.toFixed(1)+'%';
+
+function flash(id) {
+  const el=$(id); if(!el) return;
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+function setTxt(id,txt) {
+  const el=$(id); if(!el) return;
+  if(el.textContent!==txt){el.textContent=txt; flash(id);}
+}
+function setHTML(id,html) {
+  const el=$(id); if(!el) return;
+  el.innerHTML=html; flash(id);
+}
+
+
+// ── TIER EDIT TOGGLE ──────────────────────────────────────────
+let tierEditing = false;
+
+function toggleTierEdit() {
+  tierEditing = !tierEditing;
+  const btn   = $('tierEditBtn');
+  const block = $('tierBlock');
+  const inputs = document.querySelectorAll('.tier-input');
+
+  inputs.forEach(inp => { inp.disabled = !tierEditing; });
+  block.classList.toggle('tier-editing', tierEditing);
+
+  if (tierEditing) {
+    btn.textContent = '✓ Save';
+    btn.classList.add('editing');
+  } else {
+    btn.textContent = '✎ Edit';
+    btn.classList.remove('editing');
+    // Update threshold display spans
+    const tc = getTierConfig();
+    const d1 = $('thr1_display'), d2 = $('thr2_display'), d3 = $('thr3_display');
+    if(d1) d1.textContent = (tc.t1.cap+1).toLocaleString();
+    if(d2) d2.textContent = (tc.t2.cap+1).toLocaleString();
+    if(d3) d3.textContent = tc.t3.cap.toLocaleString();
+    update();
+  }
+}
+
+// Wire tier inputs so they update live while editing
+document.querySelectorAll('.tier-input').forEach(inp => {
+  inp.addEventListener('input', () => {
+    if(tierEditing) {
+      // Update threshold display spans live
+      const tc = getTierConfig();
+      const d1=$('thr1_display'),d2=$('thr2_display'),d3=$('thr3_display');
+      if(d1) d1.textContent=(tc.t1.cap+1).toLocaleString();
+      if(d2) d2.textContent=(tc.t2.cap+1).toLocaleString();
+      if(d3) d3.textContent=tc.t3.cap.toLocaleString();
+      update();
+    }
+  });
+});
+
+
+
+// ── CHECKBOX → SLIDER MAP ─────────────────────────────────
+const CHAN_MAP = [
+  {chk:'chk-pbi',  sl:'sl-pbi',     rng:'rng-pbi',     val:'val-pbi',     cls:'vr'},
+  {chk:'chk-out',  sl:'sl-out',     rng:'rng-out',     val:'val-out',     cls:'vr'},
+  {chk:'chk-cin',  sl:'sl-cin',     rng:'rng-cin',     val:'val-cin',     cls:'vr'},
+  {chk:'chk-cout', sl:'sl-cout',    rng:'rng-cout',    val:'val-cout',    cls:'vr'},
+  {chk:'chk-digital',sl:'sl-digital',rng:'rng-digital',val:'val-digital', cls:'dr'},
+];
+
+
+// ── DOM WIRING + INIT (runs after DOM is ready) ────────────────
+CHAN_MAP.forEach(ch => {
+  $(ch.chk).addEventListener('change', () => {
+    $(ch.sl).classList.toggle('open', $(ch.chk).checked);
+    document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+    update();
+  });
+});
+
+// ── CONFIG ─────────────────────────────────────────────────
+function cfg() {
+  const v = id => $(id).checked ? +$('rng-'+id.replace('chk-','')).value : 0;
+  const voicePBI  = v('chk-pbi');
+  const voiceOUT  = v('chk-out');
+  const voiceCIN  = v('chk-cin');
+  const voiceCOUT = v('chk-cout');
+  const voiceTot  = voicePBI + voiceOUT + voiceCIN + voiceCOUT;
+
+  const emailVol   = 0;  // Email AI Agent removed
+  const digitalVol = $('chk-digital').checked ? +$('rng-digital').value : 0;
+
+  // Email mix fixed at 30/40/30 (assumption)
+  const simp = 0.30;
+  const mid  = 0.40;
+  const cplx = 0.30;
+
+  const disc = +$('rng-disc').value / 100;   // additional negotiated discount
+  const tier = voiceTier(voiceTot);
+
+  const margin = +($('rng-margin')?.value || 0) / 100;  // partner margin %
+
+  // Step 1: apply discount → Step 2: add partner margin on top
+  const discountedRate = tier.rate * (1 - disc);  // after negotiated discount
+  // Margin is % of SELLING PRICE: sellingPrice = cost / (1 - margin)
+  const voiceRateP2   = margin < 1 ? discountedRate / (1 - margin) : discountedRate;
+
+  const emailRateP2 = {
+    s: EMAIL_RATE.p2.s * (1 - disc),
+    m: EMAIL_RATE.p2.m * (1 - disc),
+    c: EMAIL_RATE.p2.c * (1 - disc),
+  };
+
+  return {
+    voicePBI, voiceOUT, voiceCIN, voiceCOUT, voiceTot,
+    emailVol, digitalVol, simp, mid, cplx,
+    disc, margin, discountedRate, voiceRateP2, emailRateP2, tier,
+    emailOn:   false,  // Email AI Agent removed
+    digitalOn: $('chk-digital').checked,
+  };
+}
+
+// ── COMPUTE ────────────────────────────────────────────────
+function compute(c) {
+  const annV = c.voiceTot * 12;
+  const annE = c.emailVol * 12;
+  const annD = c.digitalVol * 12;
+
+  const p2Voice = annV * c.voiceRateP2;
+  const p1Voice = P1_VOICE_MONTHLY * 12 * P1_VOICE_RATE;  // fixed $1,296,000/yr
+
+  const p2Email = annE*(c.simp*c.emailRateP2.s + c.mid*c.emailRateP2.m + c.cplx*c.emailRateP2.c);
+  const p1Email = annE*(c.simp*EMAIL_RATE.p1.s + c.mid*EMAIL_RATE.p1.m + c.cplx*EMAIL_RATE.p1.c);
+
+  const platTot = 0;  // platform removed
+  const p2Tot   = p2Voice + p2Email;  // no platform fee
+  const p1Tot   = p1Voice + p1Email;
+  const delta   = p2Tot - p1Tot;
+  const dPct    = p1Tot > 0 ? Math.abs(delta/p1Tot)*100 : 0;
+
+  return { annV, annE, annD, p2Voice, p1Voice, p2Email, p1Email, platTot, p2Tot, p1Tot, delta, dPct };
+}
+
+// ── UPDATE UI ──────────────────────────────────────────────
+function update() {
+  const c = cfg();
+  const r = compute(c);
+
+  // Per-channel slider labels
+  CHAN_MAP.forEach(ch => {
+    const rng=$(ch.rng), lbl=$(ch.val);
+    if(rng && lbl) lbl.textContent = fmtK(+rng.value);
+  });
+
+  // Platform & discount & margin sliders
+  $('discVal').textContent  = (c.disc*100).toFixed(0)+'%';
+  $('marginVal').textContent = (c.margin*100).toFixed(0)+'%';
+
+  // Update partner margin slider track colour
+  const mRng = $('rng-margin');
+  if(mRng) mRng.style.background =
+    `linear-gradient(to right,var(--purple) 0%,var(--purple) ${c.margin*100/0.3}%,var(--border2) ${c.margin*100/0.3}%,var(--border2) 100%)`;
+
+  // Effective rates readout — Voice only, show all 4 tiers
+  const rGrid = $('effRatesGrid');
+  if (rGrid) {
+    const tc = getTierConfig();
+    const tierRates  = [tc.t1.rate, tc.t2.rate, tc.t3.rate, tc.t4.rate];
+    const tierLabels = [
+      'Tier 1 · ≤'+tc.t1.cap.toLocaleString(),
+      'Tier 2', 'Tier 3', 'Tier 4',
+    ];
+    rGrid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">` +
+    tierRates.map((baseRate, idx) => {
+      const afterDisc   = baseRate * (1 - c.disc);                               // discount off base cost
+      const afterMargin = c.margin < 1 ? afterDisc / (1 - c.margin) : afterDisc; // margin on sell price
+      const isActive    = (idx + 1) === c.tier.tier;
+      const showDisc    = c.disc   > 0;
+      const showMargin  = c.margin > 0;
+      return `
+        <div style="background:${isActive?'rgba(0,111,111,0.08)':'var(--surface)'};border:1px solid ${isActive?'var(--cyan-dim)':'var(--border)'};border-radius:6px;padding:8px 10px;">
+          <div style="font-family:var(--mono);font-size:9px;color:${isActive?'var(--cyan)':'var(--label)'};margin-bottom:6px;">${tierLabels[idx]}${isActive?' ◀':''}</div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--label);">Base cost</span>
+              <span style="font-family:var(--mono);font-size:11px;color:var(--muted2);${showDisc?'text-decoration:line-through':''};">$${baseRate.toFixed(3)}</span>
+            </div>
+            ${showDisc ? `<div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--green);">After ELT disc −${(c.disc*100).toFixed(0)}%</span>
+              <span style="font-family:var(--mono);font-size:11px;color:var(--green);${showMargin?'text-decoration:line-through':''};">$${afterDisc.toFixed(3)}</span>
+            </div>` : ''}
+            ${showMargin ? `<div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--purple);">+${(c.margin*100).toFixed(0)}% net margin</span>
+              <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${isActive?'var(--cyan)':'var(--muted2)'};">$${afterMargin.toFixed(3)}</span>
+            </div>` : `<div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--label);">ADCB price</span>
+              <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${isActive?'var(--cyan)':'var(--muted2)'};">$${afterDisc.toFixed(3)}</span>
+            </div>`}
+          </div>
+        </div>`;
+    }).join('') + `</div>`;
+  }
+
+  // Interaction summary (voice + email + digital)
+  const totalMo  = c.voiceTot + c.digitalVol;  // email removed
+  const totalAnn = totalMo * 12;
+  setTxt('voiceMo',   c.voiceTot.toLocaleString());
+  setTxt('digitalMo', c.digitalVol.toLocaleString());
+  setTxt('totalMo',   totalMo.toLocaleString());
+  setTxt('totalAnn',  totalAnn.toLocaleString());
+
+  // Tier highlight
+  const ti = c.tier;
+  setHTML('tierLbl', ti.lbl);
+  $('tierDot').style.background = TIER_COLS[ti.tier];
+  $('tierDot').style.boxShadow  = `0 0 6px ${TIER_COLS[ti.tier]}`;
+  for(let t=1;t<=4;t++) {
+    const step=$('tier'+t), row=$('trow'+t);
+    if(step) step.classList.toggle('active', t===ti.tier);
+    if(row)  row.classList.toggle('active-tier', t===ti.tier);
+  }
+
+  // Proposal cards
+  setTxt('p2Tot',   fmt(r.p2Tot));
+  setTxt('p1Tot',   fmt(r.p1Tot));
+  // Platform row label
+  setTxt('p2Voice', fmt(r.p2Voice));
+  setTxt('p1Voice', fmt(r.p1Voice));  // static $1,296,000
+
+  const digTxt = c.digitalOn ? '$0 (in scope)' : 'Out of scope';
+  // [removed: p2Digital/p1Digital — elements removed]
+
+
+  // [Comparison table removed]
+  // ── PRICING PROPOSAL SUMMARY ──────────────────────────────
+  const pctTxt  = pct(r.dPct);
+  const annVoice = c.voiceTot * 12;
+
+  // PBI-specific savings (Phone Banking Inbound only)
+  // [removed: summary/pbi/rec update — elements removed]
+  renderSection3();
+  renderSection4();
+  renderSection5(c.voiceRateP2);
+}
+
+// ── SCENARIO PRESETS ──────────────────────────────────────
+const SCENES = {
+  base:   {pbi:360000, out:0,      cin:0,      cout:0,     email:0, digital:0     },
+  lowvol: {pbi:80000,  out:0,      cin:70000,  cout:0,     email:0,  digital:0     },
+  tier2:  {pbi:220000, out:0,      cin:180000, cout:0,     email:0, digital:0     },
+  tier3:  {pbi:280000, out:80000,  cin:190000, cout:0,     email:0, digital:0     },
+  tier4:  {pbi:350000, out:100000, cin:200000, cout:50000, email:0, digital:0     },
+  allch:  {pbi:150000, out:80000,  cin:100000, cout:50000, email:0, digital:50000 },
+};
+
+function applyScene(key, el) {
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const s = SCENES[key];
+  const set = (id, val) => {
+    const chk=$(id), rng=$('rng-'+id.replace('chk-','')), sl=$('sl-'+id.replace('chk-',''));
+    if(!chk) return;
+    chk.checked = val > 0;
+    if(rng) rng.value = val;
+    if(sl)  sl.classList.toggle('open', val > 0);
+  };
+  set('chk-pbi', s.pbi);
+  set('chk-out', s.out);
+  set('chk-cin', s.cin);
+  set('chk-cout', s.cout);
+  set('chk-digital', s.digital);
+  update();
+}
+
+// ── WIRE RANGE SLIDERS ────────────────────────────────────
+document.querySelectorAll('input[type=range]').forEach(el => {
+  el.addEventListener('input', () => {
+    document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+    update();
+  });
+});
+
+// ── WIRE PLATFORM TOGGLES ─────────────────────────────────
+
+// ── INIT ──────────────────────────────────────────────────
+update();
+
+
+
+// ── PDF DOWNLOAD ──────────────────────────────────────────────
+function downloadPDF() {
+  const c  = cfg();
+  const r  = compute(c);
+  const ti = c.tier;
+  const disc = (c.disc * 100).toFixed(0);
+
+  // Helpers
+  const fmtN  = n => '$' + Math.round(n).toLocaleString('en-US');
+  const fmtR  = v => '$' + (+v).toFixed(2);
+  const na    = '<span style="color:#999;font-style:italic;">—</span>';
+  const ok    = v => `<span style="color:#1a8c60;font-weight:600;">${v}</span>`;
+  const hi    = v => `<span style="color:#006f6f;font-weight:600;">${v}</span>`;
+  const muted = v => `<span style="color:#666;">${v}</span>`;
+
+  const rowStyle  = 'style="display:grid;grid-template-columns:2.2fr 1.1fr 1.1fr 1fr;padding:9px 14px;border-bottom:1px solid #e0e4ec;align-items:start;"';
+  const headStyle = 'style="display:grid;grid-template-columns:2.2fr 1.1fr 1.1fr 1fr;padding:8px 14px;background:#f4f6f9;border-bottom:2px solid #c4c9d8;"';
+
+  const cell  = (txt, extra='') => `<div style="font-size:12px;color:#3e4558;${extra}">${txt}</div>`;
+  const cellH = (txt, extra='') => `<div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#7a8192;${extra}">${txt}</div>`;
+  const mono  = (txt, col='#3e4558') => `<div style="font-family:'DM Mono',monospace;font-size:12px;color:${col};text-align:right;">${txt}</div>`;
+
+  // Voice breakdown rows
+  const voiceTypes = [
+    { id:'chk-pbi',  lbl:'Phone Banking Inbound',  rng:'rng-pbi'  },
+    { id:'chk-out',  lbl:'Outbound Calls',          rng:'rng-out'  },
+    { id:'chk-cin',  lbl:'Collections Inbound',     rng:'rng-cin'  },
+    { id:'chk-cout', lbl:'Collections Outbound',    rng:'rng-cout' },
+  ];
+  const activeVoice = voiceTypes.filter(v => $(v.id)?.checked);
+
+  // Build tier rows
+  const tc = getTierConfig();
+  const tierRows = [
+    { range:`≤ ${tc.t1.cap.toLocaleString()}/mo`,  rate: tc.t1.rate, active: ti.tier===1 },
+    { range:`${(tc.t1.cap+1).toLocaleString()} – ${tc.t2.cap.toLocaleString()}/mo`, rate: tc.t2.rate, active: ti.tier===2 },
+    { range:`${(tc.t2.cap+1).toLocaleString()} – ${tc.t3.cap.toLocaleString()}/mo`, rate: tc.t3.rate, active: ti.tier===3 },
+    { range:`> ${tc.t3.cap.toLocaleString()}/mo`,   rate: tc.t4.rate, active: ti.tier===4 },
+  ].map(t => `
+    <div style="display:flex;justify-content:space-between;padding:6px 10px;background:${t.active?'rgba(0,111,111,0.07)':'#f9fafb'};border:1px solid ${t.active?'#008080':'#e0e4ec'};border-radius:5px;">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:${t.active?'#006f6f':'#666'};">${t.range}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${t.active?'#006f6f':'#3e4558'};">$${t.rate.toFixed(2)}/call${disc>0?' → $'+(t.rate*(1-c.disc)).toFixed(2):''}</span>
+    </div>`).join('');
+
+  // Voice channel rows
+  const voiceChannelRows = activeVoice.length > 0
+    ? activeVoice.map(v => {
+        const vol = +$(v.rng)?.value || 0;
+        return `<tr><td style="padding:5px 10px;color:#555;font-size:11px;">${v.lbl}</td><td style="padding:5px 10px;font-family:'DM Mono',monospace;font-size:11px;text-align:right;color:#3e4558;">${(vol/1000).toFixed(0)}k / mo</td></tr>`;
+      }).join('') + `<tr style="border-top:1px solid #c4c9d8;"><td style="padding:6px 10px;font-weight:600;font-size:11px;color:#1a1d28;">Total voice</td><td style="padding:6px 10px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700;text-align:right;color:#006f6f;">${c.voiceTot.toLocaleString()} / mo</td></tr>`
+    : '<tr><td colspan="2" style="padding:6px 10px;color:#999;font-size:11px;">No voice channels selected</td></tr>';
+
+  const html = `
+  <div style="font-family:'DM Sans',sans-serif;color:#1a1d28;max-width:900px;margin:0 auto;padding:24px 0;">
+
+    <!-- PDF HEADER -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #dde0ea;">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;color:#006f6f;text-transform:uppercase;margin-bottom:4px;">UNIPHORE · Pricing Configurator</div>
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.02em;margin-bottom:3px;">ADCB Self Serve 2.0</div>
+        <div style="font-size:11px;color:#7a8192;">Confidential · Generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:#7a8192;text-transform:uppercase;letter-spacing:0.1em;">Total Monthly Interactions</div>
+        <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:#006f6f;">${(c.voiceTot+c.digitalVol).toLocaleString()}</div>
+      </div>
+    </div>
+
+    <!-- PROPOSAL TOTALS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div style="border:2px solid #008080;border-radius:8px;padding:16px;background:#f9ffff;">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;color:#006f6f;margin-bottom:4px;">Recommended</div>
+        <div style="font-family:'DM Mono',monospace;font-size:26px;font-weight:600;color:#006f6f;margin-bottom:2px;">${fmtN(r.p2Tot)}</div>
+        <div style="font-size:10px;color:#7a8192;margin-bottom:12px;">Total annual investment</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <tr><td style="padding:3px 0;color:#666;">Voice AI</td><td style="text-align:right;font-family:'DM Mono',monospace;">${fmtN(r.p2Voice)}</td></tr>
+        </table>
+      </div>
+      <div style="border:1px solid #c4c9d8;border-radius:8px;padding:16px;background:#f9fafb;">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;color:#7a8192;margin-bottom:4px;">Alternative</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:10px;">Current Proposal · AI Apps Only</div>
+        <div style="font-family:'DM Mono',monospace;font-size:26px;font-weight:600;color:#1a1d28;margin-bottom:2px;">${fmtN(r.p1Tot)}</div>
+        <div style="font-size:10px;color:#7a8192;margin-bottom:12px;">Total annual investment</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <tr><td style="padding:3px 0;color:#666;">Platform</td><td style="text-align:right;font-family:'DM Mono',monospace;color:#999;font-style:italic;">App access only</td></tr>
+          <tr><td style="padding:3px 0;color:#666;">Voice AI</td><td style="text-align:right;font-family:'DM Mono',monospace;">${fmtN(r.p1Voice)}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- DELTA BANNER -->
+    <div style="border:1px solid ${r.delta<=0?'#1a8c60':'#c47d00'};background:${r.delta<=0?'#f0fff8':'#fffbf0'};border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:${r.delta<=0?'#1a8c60':'#b87200'};">${r.delta>0?'Revised Proposal costs '+fmtN(r.delta)+' more':'Revised Proposal saves '+fmtN(-r.delta)}</div>
+        <div style="font-size:11px;color:#666;margin-top:2px;">${(r.dPct).toFixed(1)}% ${r.delta>0?'premium over':'saving vs'} Current Proposal at these volumes</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:${r.delta<=0?'#1a8c60':'#b87200'};">${r.delta>0?'+':'−'}${fmtN(Math.abs(r.delta))}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+
+      <!-- VOLUME BREAKDOWN -->
+      <div style="border:1px solid #dde0ea;border-radius:8px;overflow:hidden;">
+        <div style="background:#f4f6f9;padding:8px 12px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#7a8192;border-bottom:1px solid #dde0ea;">Volume Breakdown</div>
+        <table style="width:100%;border-collapse:collapse;">
+          ${voiceChannelRows}
+          ${c.digitalOn?`<tr><td style="padding:5px 10px;color:#555;font-size:11px;">Digital AI Agent</td><td style="padding:5px 10px;font-family:'DM Mono',monospace;font-size:11px;text-align:right;color:#5e32c0;">${(c.digitalVol/1000).toFixed(0)}k / mo</td></tr>`:''}
+          <tr style="background:#eef2f8;"><td style="padding:6px 10px;font-weight:700;font-size:11px;">Total Interactions</td><td style="padding:6px 10px;font-family:'DM Mono',monospace;font-size:12px;font-weight:700;text-align:right;color:#006f6f;">${(c.voiceTot+c.digitalVol).toLocaleString()} / mo</td></tr>
+        </table>
+      </div>
+
+      <!-- TIER PRICING -->
+      <div style="border:1px solid #dde0ea;border-radius:8px;overflow:hidden;">
+        <div style="background:#f4f6f9;padding:8px 12px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#7a8192;border-bottom:1px solid #dde0ea;">
+          Tier Pricing${disc>0?' · '+disc+'% discount applied':''}
+        </div>
+        <div style="padding:10px;display:flex;flex-direction:column;gap:5px;">${tierRows}</div>
+      </div>
+    </div>
+
+    <!-- FULL COMPARISON TABLE -->
+    <div style="border:1px solid #dde0ea;border-radius:8px;overflow:hidden;margin-bottom:16px;">
+      <div ${headStyle}>
+        ${cellH('Component')}${cellH('Revised Proposal','text-align:right;')}${cellH('Current Proposal','text-align:right;')}${cellH('Revised vs Current','text-align:right;')}
+      </div>
+      <div ${rowStyle}>
+        ${mono(fmtN(r.platTot),'#006f6f')}
+        ${mono('App only','#999')}
+        ${mono('—','#999')}
+      </div>
+      <div ${rowStyle} style="background:#f9fafb;">
+        ${cell('<strong>Voice AI Agent</strong><div style="font-size:10px;color:#999;">'+(r.annV/1e6).toFixed(2)+'M calls/yr · @'+(ti.rate*100).toFixed(0)+'¢ revised / 30¢ current</div>')}
+        ${mono(fmtN(r.p2Voice),'#006f6f')}
+        ${mono(fmtN(r.p1Voice),'#3e4558')}
+        ${mono((r.p1Voice-r.p2Voice>=0?'+':'')+fmtN(r.p1Voice-r.p2Voice), r.p1Voice-r.p2Voice>=0?'#1a8c60':'#b87200')}
+      </div>
+
+      <div ${rowStyle} style="background:#f9fafb;">
+        ${cell('<strong>Process Discovery</strong><div style="font-size:10px;color:#999;">150k platform credits</div>')}
+        <div style="font-size:12px;color:${c.proc?'#1a8c60':'#999'};font-style:${c.proc?'normal':'italic'};">${c.proc?'$0 (included)':'—'}</div>
+        <div style="font-size:12px;color:#999;font-style:italic;">Not offered</div>
+        <div style="font-size:12px;color:#999;">—</div>
+      </div>
+      <div ${rowStyle} style="background:#eef2f8;border-top:2px solid #c4c9d8;">
+        ${cell('<strong>TOTAL INVESTMENT</strong>',  'font-size:13px;font-weight:700;')}
+        ${mono(fmtN(r.p2Tot),'#006f6f')}
+        ${mono(fmtN(r.p1Tot),'#3e4558')}
+        ${mono((r.delta<=0?'Revised saves ':'Current saves ')+fmtN(Math.abs(r.delta)), r.delta<=0?'#1a8c60':'#b87200')}
+      </div>
+    </div>
+
+    <!-- FOOTER NOTE -->
+    <div style="font-size:10px;color:#9298a8;text-align:center;padding-top:8px;border-top:1px solid #eee;">
+      Current Proposal: 360k calls/mo @ $0.429/call (fixed) · This document is confidential
+    </div>
+  </div>`;
+
+  // Inject into snapshot div and print
+  const snap = $('pdfSnapshot');
+  if (snap) snap.innerHTML = html;
+
+  // Slight delay to let DOM render, then print
+  setTimeout(() => { window.print(); }, 150);
+}
+
+
+
+// ── SECTION 3: CONTRACT TRANSITION ────────────────────────────────────────────
+const LEGACY_RATE  = 0.071;
+const CONTRACT_END_LEGACY = new Date('2028-10-31');
+const NEW_START    = new Date('2026-05-01');
+const PHASE1_END   = new Date('2026-10-31');   // May–Oct 2026: legacy rate
+const PHASE2_END   = new Date('2028-10-31');   // Nov 2026–Oct 2028: negotiated − legacy
+const NEW_END      = new Date('2031-04-30');   // Nov 2028–Apr 2031: full negotiated
+
+function monthsBetween(a, b) {
+  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB', {month:'short', year:'numeric'});
+}
+
+
+
+function renderSection3() {
+  // Pull current values directly from DOM inputs
+  var disc   = parseFloat(document.getElementById('rng-disc')  && document.getElementById('rng-disc').value   || 0) / 100;
+  var margin = parseFloat(document.getElementById('rng-margin') && document.getElementById('rng-margin').value || 30) / 100;
+
+  // Get tier config
+  var thr1  = parseFloat((document.getElementById('thr1')  || {value:'360000'}).value);
+  var thr2  = parseFloat((document.getElementById('thr2')  || {value:'500000'}).value);
+  var thr3  = parseFloat((document.getElementById('thr3')  || {value:'600000'}).value);
+  var r1    = parseFloat((document.getElementById('rate1') || {value:'0.30'}).value);
+  var r2    = parseFloat((document.getElementById('rate2') || {value:'0.25'}).value);
+  var r3    = parseFloat((document.getElementById('rate3') || {value:'0.20'}).value);
+  var r4    = parseFloat((document.getElementById('rate4') || {value:'0.15'}).value);
+
+  // Get total voice volume
+  function getVol(chkId, rngId) {
+    var chk = document.getElementById(chkId);
+    var rng = document.getElementById(rngId);
+    return (chk && chk.checked && rng) ? parseFloat(rng.value) || 0 : 0;
+  }
+  var voiceMo = getVol('chk-pbi','rng-pbi') + getVol('chk-out','rng-out')
+              + getVol('chk-cin','rng-cin') + getVol('chk-cout','rng-cout');
+
+  // Calculate tiered base rate
+  var baseRate;
+  if      (voiceMo <= thr1) baseRate = r1;
+  else if (voiceMo <= thr2) baseRate = r2;
+  else if (voiceMo <= thr3) baseRate = r3;
+  else                       baseRate = r4;
+
+  // Apply discount then margin
+  // Margin on SELLING PRICE: selling = cost / (1 - margin)
+  var discCost = parseFloat((baseRate * (1 - disc)).toFixed(4));
+  var negRate  = margin < 1 ? parseFloat((discCost / (1 - margin)).toFixed(4)) : discCost;
+  var LEGACY  = 0.071;
+  var ph1Rate = LEGACY;
+  var ph2Rate = parseFloat(Math.max(0, negRate - LEGACY).toFixed(4));
+  var ph3Rate = negRate;
+
+  // Update contract card
+  var negEl = document.getElementById('s3NegRate');
+  if (negEl) negEl.textContent = '$' + negRate.toFixed(3);
+
+  var bdEl = document.getElementById('s3RateBreakdown');
+  if (bdEl) {
+    var parts = ['Base: $' + baseRate.toFixed(3)];
+    if (disc   > 0) parts.push('After ' + (disc*100).toFixed(0)   + '% disc: $' + (baseRate*(1-disc)).toFixed(3));
+    if (margin > 0) parts.push((margin*100).toFixed(0) + '% net margin → sell price: $' + negRate.toFixed(3));
+    bdEl.innerHTML = parts.join('&nbsp;&nbsp;→&nbsp;&nbsp;');
+  }
+
+  // ── TIMELINE ─────────────────────────────────────────────────
+  var tc = document.getElementById('timelineCanvas');
+  if (tc) {
+    var years = ['2026','2027','2028','2029','2030','2031'];
+    var yearAxis = '<div style="display:flex;margin-bottom:8px;">';
+    for (var yi = 0; yi < years.length; yi++) {
+      var align = yi===0 ? 'left' : yi===5 ? 'right' : 'center';
+      yearAxis += '<div style="flex:1;font-family:monospace;font-size:10px;color:#8a90a0;text-align:'+align+';">'+years[yi]+'</div>';
+    }
+    yearAxis += '</div>';
+
+    // Legacy bar: 29/60 months
+    var legacyBar = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+      + '<span style="font-family:monospace;font-size:9px;color:#8a90a0;width:120px;flex-shrink:0;">Self Serve Legacy</span>'
+      + '<div style="flex:1;height:24px;background:#efefef;border-radius:4px;overflow:hidden;position:relative;">'
+      + '<div style="position:absolute;left:0;width:48.3%;height:100%;background:#b87200;display:flex;align-items:center;padding-left:8px;">'
+      + '<span style="font-family:monospace;font-size:9px;color:#fff;white-space:nowrap;">$0.071 · until Oct 2028</span>'
+      + '</div></div></div>';
+
+    // Voice AI bar: 3 phases across 60 months
+    var p1w = (6/60*100).toFixed(1);
+    var p2w = (24/60*100).toFixed(1);
+    var p3w = (30/60*100).toFixed(1);
+    var voiceBar = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">'
+      + '<span style="font-family:monospace;font-size:9px;color:#8a90a0;width:120px;flex-shrink:0;">Voice AI (New)</span>'
+      + '<div style="flex:1;height:24px;background:#efefef;border-radius:4px;overflow:hidden;display:flex;">'
+      + '<div style="width:'+p1w+'%;background:#b87200;display:flex;align-items:center;justify-content:center;"><span style="font-family:monospace;font-size:8px;color:#fff;">Ph1</span></div>'
+      + '<div style="width:'+p2w+'%;background:#006f6f;display:flex;align-items:center;justify-content:center;"><span style="font-family:monospace;font-size:8px;color:#fff;white-space:nowrap;">Ph2 · 24mo · $'+ph2Rate.toFixed(3)+'</span></div>'
+      + '<div style="width:'+p3w+'%;background:#1a8c60;border-radius:0 4px 4px 0;display:flex;align-items:center;justify-content:center;"><span style="font-family:monospace;font-size:8px;color:#fff;white-space:nowrap;">Ph3 · 30mo · $'+ph3Rate.toFixed(3)+'</span></div>'
+      + '</div></div>';
+
+    var legend = '<div style="display:flex;gap:20px;flex-wrap:wrap;">'
+      + '<div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;background:#b87200;border-radius:2px;"></div><span style="font-family:monospace;font-size:9px;color:#4a5068;">Phase 1 · $'+ph1Rate.toFixed(3)+'/call</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;background:#006f6f;border-radius:2px;"></div><span style="font-family:monospace;font-size:9px;color:#4a5068;">Phase 2 · $'+ph2Rate.toFixed(3)+'/call</span></div>'
+      + '<div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;background:#1a8c60;border-radius:2px;"></div><span style="font-family:monospace;font-size:9px;color:#4a5068;">Phase 3 · $'+ph3Rate.toFixed(3)+'/call</span></div>'
+      + '</div>';
+
+    tc.innerHTML = yearAxis + legacyBar + voiceBar + legend;
+  }
+
+  // ── PHASE TABLE ───────────────────────────────────────────────
+  var pt = document.getElementById('phaseTable');
+  if (pt) {
+    var phaseDefs = [
+      { label:'Phase 1 — Special Offer',   period:'1 May 2026 – 31 Oct 2026',  months:6,  rate:ph1Rate, color:'#b87200', bg:'#fff8ee',
+        note:'ADCB continues paying the existing Legacy rate of $0.071. Voice AI transition begins.' },
+      { label:'Phase 2 — Overlap Credit',  period:'1 Nov 2026 – 31 Oct 2028',  months:24, rate:ph2Rate, color:'#006f6f', bg:'#edfafa',
+        note:'Negotiated rate ($'+negRate.toFixed(3)+') minus Legacy credit ($0.071) = $'+ph2Rate.toFixed(3)+'/call.' },
+      { label:'Phase 3 — Full Contract',   period:'1 Nov 2028 – 30 Apr 2031',  months:30, rate:ph3Rate, color:'#1a8c60', bg:'#edf9f4',
+        note:'Legacy contract expired. Full effective Revised Proposal rate of $'+ph3Rate.toFixed(3)+'/call applies.' },
+    ];
+    var html = '';
+    for (var pi = 0; pi < phaseDefs.length; pi++) {
+      var ph = phaseDefs[pi];
+      html += '<div style="display:grid;grid-template-columns:4px 1fr auto;gap:12px;padding:14px 18px;border-bottom:1px solid #dde0ea;background:'+ph.bg+';align-items:start;">'
+        + '<div style="background:'+ph.color+';border-radius:2px;min-height:50px;"></div>'
+        + '<div>'
+        +   '<div style="font-size:12.5px;font-weight:600;color:#1a1d28;margin-bottom:2px;">'+ph.label+'</div>'
+        +   '<div style="font-family:monospace;font-size:10px;color:#7a8192;margin-bottom:4px;">'+ph.period+' · '+ph.months+' months</div>'
+        +   '<div style="font-size:11px;color:#3e4558;line-height:1.5;">'+ph.note+'</div>'
+        + '</div>'
+        + '<div style="text-align:right;"><div style="font-family:monospace;font-size:22px;font-weight:700;color:'+ph.color+';">$'+ph.rate.toFixed(3)+'</div><div style="font-family:monospace;font-size:9px;color:#8a90a0;">per call</div></div>'
+        + '</div>';
+    }
+    html += '<div style="padding:10px 18px;background:#f4f6f9;border-top:1px solid #c4c9d8;font-family:monospace;font-size:9px;color:#8a90a0;">'
+      + 'Phase 2 = Sell price ($'+negRate.toFixed(3)+') − Legacy ($0.071) = $'+ph2Rate.toFixed(3)+'&nbsp;|&nbsp;'+'Base $'+baseRate.toFixed(3)+' → after '+((disc*100).toFixed(0))+'% disc: $'+discCost.toFixed(3)+'  → selling at '+((margin*100).toFixed(0))+'% net margin: $'+negRate.toFixed(3)
+      + '</div>';
+    pt.innerHTML = html;
+  }
+
+  // ── BAR CHART ─────────────────────────────────────────────────
+  var pc = document.getElementById('phaseChart');
+  if (pc) {
+    var chartPhases = [
+      { label:'Special Offer',  months:6,  rate:ph1Rate, color:'#b87200' },
+      { label:'Overlap Credit', months:24, rate:ph2Rate, color:'#006f6f' },
+      { label:'Full Contract',  months:30, rate:ph3Rate, color:'#1a8c60' },
+    ];
+    var maxRate = Math.max(ph1Rate, ph2Rate, ph3Rate, 0.001);
+    var chartHtml = '';
+    for (var ci = 0; ci < chartPhases.length; ci++) {
+      var cp = chartPhases[ci];
+      var barW = Math.round(cp.rate / maxRate * 100);
+      chartHtml += '<div>'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+        +   '<span style="font-size:11px;color:#3e4558;font-weight:500;">'+cp.label+'</span>'
+        +   '<span style="font-family:monospace;font-size:12px;font-weight:700;color:'+cp.color+';">$'+cp.rate.toFixed(3)+'</span>'
+        + '</div>'
+        + '<div style="height:30px;background:#efefef;border-radius:5px;overflow:hidden;">'
+        +   '<div style="height:100%;width:'+barW+'%;background:'+cp.color+';border-radius:5px;display:flex;align-items:center;padding-left:8px;transition:width 0.5s;">'
+        +     (barW > 15 ? '<span style="font-family:monospace;font-size:9px;color:#fff;">'+cp.months+' months</span>' : '')
+        +   '</div>'
+        + '</div>'
+        + '</div>';
+    }
+    pc.innerHTML = chartHtml;
+  }
+
+  // ── ANNUAL COST TABLE ─────────────────────────────────────────
+  var act = document.getElementById('annualCostTable');
+  if (act) {
+    var costPhases = [
+      { label:'Phase 1 — Special Offer',  period:'1 May 2026 – 31 Oct 2026',  months:6,  rate:ph1Rate, color:'#b87200', bg:'#fff8ee' },
+      { label:'Phase 2 — Overlap Credit', period:'1 Nov 2026 – 31 Oct 2028',  months:24, rate:ph2Rate, color:'#006f6f', bg:'#edfafa' },
+      { label:'Phase 3 — Full Contract',  period:'1 Nov 2028 – 30 Apr 2031',  months:30, rate:ph3Rate, color:'#1a8c60', bg:'#edf9f4' },
+    ];
+    // Phase 1 ADCB payout = $0 (already paying $0.071 legacy, no incremental cost)
+    function fmtMoney(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+
+    var totalPayout = 0;
+    for (var i = 0; i < costPhases.length; i++) {
+      // Phase 1 (index 0) payout is $0 — covered by existing legacy contract
+      if (i > 0) totalPayout += voiceMo * costPhases[i].months * costPhases[i].rate;
+    }
+
+    var tbl = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.2fr;background:#f4f6f9;border-bottom:1px solid #dde0ea;">';
+    var headers = ['Phase','Duration','Rate / Call','Monthly Vol.','ADCB Payout'];
+    for (var hi = 0; hi < headers.length; hi++) {
+      tbl += '<div style="padding:10px 14px;font-family:monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8a90a0;">'+headers[hi]+'</div>';
+    }
+    tbl += '</div>';
+
+    for (var ri = 0; ri < costPhases.length; ri++) {
+      var rp = costPhases[ri];
+      var isPhase1 = ri === 0;
+      // Phase 1 payout = $0 (ADCB continues paying existing $0.071 legacy rate, no new cost)
+      var payout = isPhase1 ? 0 : voiceMo * rp.months * rp.rate;
+      var payoutDisplay = !voiceMo ? '—' : isPhase1
+        ? '<span style="font-weight:700;color:#1a8c60;">$0</span><div style="font-size:9px;color:#8a90a0;margin-top:2px;">Covered by legacy contract</div>'
+        : fmtMoney(payout);
+      tbl += '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.2fr;border-bottom:1px solid #dde0ea;background:'+rp.bg+';">'
+        + '<div style="padding:12px 14px;"><div style="font-size:12.5px;font-weight:600;color:#1a1d28;">'+rp.label+'</div><div style="font-family:monospace;font-size:10px;color:#7a8192;margin-top:2px;">'+rp.period+'</div></div>'
+        + '<div style="padding:12px 14px;font-family:monospace;font-size:12px;color:#3e4558;">'+rp.months+' months</div>'
+        + '<div style="padding:12px 14px;font-family:monospace;font-size:13px;font-weight:700;color:'+rp.color+';">$'+rp.rate.toFixed(3)+'</div>'
+        + '<div style="padding:12px 14px;font-family:monospace;font-size:12px;color:#3e4558;">'+(voiceMo > 0 ? voiceMo.toLocaleString()+'/mo' : '—')+'</div>'
+        + '<div style="padding:12px 14px;font-family:monospace;font-size:13px;font-weight:700;color:'+rp.color+';">'+payoutDisplay+'</div>'
+        + '</div>';
+    }
+
+    tbl += '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.2fr;background:#edf9f4;border-top:2px solid #c4c9d8;">'
+      + '<div style="padding:12px 14px;font-size:13px;font-weight:700;color:#1a1d28;grid-column:1/5;">Total ADCB Payout (5 years · 60 months)</div>'
+      + '<div style="padding:12px 14px;font-family:monospace;font-size:16px;font-weight:700;color:#1a8c60;">'+(voiceMo > 0 ? fmtMoney(totalPayout) : 'Set call volume above')+'</div>'
+      + '</div>';
+
+    act.innerHTML = tbl;
+  }
+}
+
+
+// ── SECTION 4: PROFESSIONAL SERVICES ──────────────────────────────────────────
+function renderSection4() {
+  var margin   = parseFloat((document.getElementById('rng-margin')  || {value:'30'}).value) / 100;
+  var s4disc   = parseFloat((document.getElementById('rng-s4disc')  || {value:'0'}).value)  / 100;
+  var fmtM     = function(n) { return '$' + Math.round(n).toLocaleString('en-US'); };
+
+  // PM: margin only (no ELT discount)
+  var pmSell      = margin < 1 ? SVC_PM_COST / (1 - margin) : SVC_PM_COST;
+  var pmMarginAmt = pmSell - SVC_PM_COST;
+
+  // OTF + Perf: discount first, then margin on sell price
+  var sellWithDisc = function(cost) {
+    var discCost = cost * (1 - s4disc);
+    return margin < 1 ? discCost / (1 - margin) : discCost;
+  };
+  var otfSell       = sellWithDisc(SVC_OTF_COST);
+  var perfSell      = sellWithDisc(SVC_PERF_COST);
+  var otfMarginAmt  = otfSell  - SVC_OTF_COST  * (1 - s4disc);
+  var perfMarginAmt = perfSell - SVC_PERF_COST * (1 - s4disc);
+
+  // ── Update s4DiscVal label ─────────────────────────────────────────
+  var dvEl = document.getElementById('s4DiscVal');
+  if(dvEl) dvEl.textContent = (s4disc*100).toFixed(0)+'%';
+
+  // ── Intermediate values for 3-step display ─────────────────────────
+  var otfAfterDisc  = SVC_OTF_COST  * (1 - s4disc);
+  var perfAfterDisc = SVC_PERF_COST * (1 - s4disc);
+  var discPctTxt    = (s4disc > 0 ? '−' : '−') + (s4disc*100).toFixed(0) + '%';
+  var mgnPctTxt     = (margin*100).toFixed(0);
+
+  // ── Summary cards ──────────────────────────────────────────────────
+  var els = {
+    s4OtfSell:fmtM(otfSell), s4PmSell:fmtM(pmSell), s4PerfSell:fmtM(perfSell),
+    s4OtfMarginAmt:fmtM(otfMarginAmt), s4PmMarginAmt:fmtM(pmMarginAmt),
+    s4PerfMarginAmt:fmtM(perfMarginAmt),
+    s4MarginPct:mgnPctTxt+'%',
+    s4ExTotal:fmtM(otfSell + pmSell + perfSell),
+    // 3-step breakdown: OTF
+    s4OtfAfterDisc:fmtM(otfAfterDisc),
+    s4OtfDiscPct:discPctTxt,
+    s4OtfMarginPct2:mgnPctTxt,
+    // 3-step breakdown: Perf
+    s4PerfAfterDisc:fmtM(perfAfterDisc),
+    s4PerfDiscPct:discPctTxt,
+    s4PerfMarginPct2:mgnPctTxt,
+  };
+  for(var id in els) { var el=document.getElementById(id); if(el) el.textContent=els[id]; }
+
+  // Grey out the "after disc" rows when no discount applied
+  var otfDiscRow  = document.getElementById('s4OtfAfterDisc');
+  var perfDiscRow = document.getElementById('s4PerfAfterDisc');
+  var noDisc = s4disc === 0;
+  if(otfDiscRow)  otfDiscRow.parentElement.style.opacity  = noDisc ? '0.35' : '1';
+  if(perfDiscRow) perfDiscRow.parentElement.style.opacity = noDisc ? '0.35' : '1';
+
+  // ── 5-Year payout table ───────────────────────────────────────────
+  var tblEl = document.getElementById('s4YearTable');
+  if(!tblEl) return;
+
+  var headers = ['Year', 'Period', 'Deployment', 'Partner PM', 'Performance Svc', 'ADCB Payout', 'Partner Margin'];
+  var hdr = '<div style="display:grid;grid-template-columns:50px 1.3fr 1fr 1fr 1.1fr 1fr 1fr;background:#f4f6f9;border-bottom:1px solid #dde0ea;">';
+  for(var hi=0; hi<headers.length; hi++) {
+    hdr += '<div style="padding:10px 14px;font-family:monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8a90a0;">'+headers[hi]+'</div>';
+  }
+  hdr += '</div>';
+
+  var periods = ['May 2026–Apr 2027','May 2027–Apr 2028','May 2028–Apr 2029','May 2029–Apr 2030','May 2030–Apr 2031'];
+  var rows = ''; var totalPayout = 0; var totalMargin = 0;
+  for(var yr=1; yr<=SVC_YEARS; yr++) {
+    var y1       = yr===1;
+    var otfP     = y1 ? otfSell  : 0;
+    var pmP      = y1 ? pmSell   : 0;
+    var yearTot  = otfP + pmP + perfSell;
+    var yearMrg  = (y1 ? otfMarginAmt+pmMarginAmt : 0) + perfMarginAmt;
+    totalPayout += yearTot; totalMargin += yearMrg;
+    var col = 'display:grid;grid-template-columns:50px 1.3fr 1fr 1fr 1.1fr 1fr 1fr;';
+    var bg  = y1 ? '#f9f6ff' : (yr%2===0?'#f9fffe':'#fff');
+    rows += '<div style="'+col+'border-bottom:1px solid #dde0ea;background:'+bg+';">'
+      +'<div style="padding:11px 12px;font-family:monospace;font-size:13px;font-weight:700;color:'+(y1?'#5e32c0':'#3e4558')+';">Y'+yr+'</div>'
+      +'<div style="padding:11px 12px;font-size:10px;color:#7a8192;font-family:monospace;">'+periods[yr-1]+'</div>'
+      +'<div style="padding:11px 12px;font-family:monospace;font-size:12px;color:'+(y1?'#5e32c0':'#bbb')+';">'+(y1?fmtM(otfSell):'—')+'</div>'
+      +'<div style="padding:11px 12px;font-family:monospace;font-size:12px;color:'+(y1?'#5e32c0':'#bbb')+';">'+(y1?fmtM(pmSell):'—')+'</div>'
+      +'<div style="padding:11px 12px;font-family:monospace;font-size:12px;font-weight:600;color:#006f6f;">'+fmtM(perfSell)+'</div>'
+      +'<div style="padding:11px 12px;font-family:monospace;font-size:13px;font-weight:700;color:#1a1d28;">'+fmtM(yearTot)+'</div>'
+      +'<div style="padding:11px 12px;font-family:monospace;font-size:12px;font-weight:600;color:#1a8c60;">'+fmtM(yearMrg)+'</div>'
+      +'</div>';
+  }
+  rows += '<div style="display:grid;grid-template-columns:50px 1.3fr 1fr 1fr 1.1fr 1fr 1fr;background:#edf9f4;border-top:2px solid #c4c9d8;">'
+    +'<div style="padding:11px 12px;font-weight:700;color:#1a1d28;grid-column:1/3;font-size:12px;">5-Year Total</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:12px;font-weight:700;color:#5e32c0;">'+fmtM(otfSell)+'</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:12px;font-weight:700;color:#5e32c0;">'+fmtM(pmSell)+'</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:13px;font-weight:700;color:#006f6f;">'+fmtM(perfSell*SVC_YEARS)+'</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:15px;font-weight:700;color:#1a1d28;">'+fmtM(totalPayout)+'</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:14px;font-weight:700;color:#1a8c60;">'+fmtM(totalMargin)+'</div>'
+    +'</div>';
+  tblEl.innerHTML = hdr + rows;
+}
+
+
+// ── SECTION 5: CONSOLIDATED YoY INVESTMENT ────────────────────────────────────
+function renderSection5(voiceRateP2) {
+  var platTot = 0;  // platform removed
+  var fmtM   = function(n) { return '$' + Math.round(n).toLocaleString('en-US'); };
+  var margin = parseFloat((document.getElementById('rng-margin') || {value:'30'}).value) / 100;
+  var sell   = function(cost) { return margin < 1 ? cost / (1 - margin) : cost; };
+
+  // Voice payout per phase (uses total monthly voice volume)
+  var voiceMo = 0;
+  var chks = ['pbi','out','cin','cout'];
+  for(var ci=0; ci<chks.length; ci++) {
+    var chk=document.getElementById('chk-'+chks[ci]);
+    var rng=document.getElementById('rng-'+chks[ci]);
+    if(chk && chk.checked && rng) voiceMo += parseFloat(rng.value)||0;
+  }
+
+  var LEGACY = 0.071;
+  var ph1    = LEGACY;                              // May–Oct 2026 (6 mo)
+  var ph2    = Math.max(0, voiceRateP2 - LEGACY);  // Nov 2026–Oct 2028 (24 mo)
+  var ph3    = voiceRateP2;                         // Nov 2028–Apr 2031 (30 mo)
+
+  // Professional services sell prices
+  var otfSell  = sell(SVC_OTF_COST);
+  var pmSell   = sell(SVC_PM_COST);
+  var perfSell = sell(SVC_PERF_COST);
+
+  // Voice payout by calendar year (May–Apr contract years)
+  // Y1: May 2026–Apr 2027 = 6mo ph1 + 6mo ph2
+  // Y2: May 2027–Apr 2028 = 12mo ph2
+  // Y3: May 2028–Apr 2029 = 6mo ph2 + 6mo ph3
+  // Y4: May 2029–Apr 2030 = 12mo ph3
+  // Y5: May 2030–Apr 2031 = 12mo ph3
+  var voiceByYear = [
+    voiceMo*6*ph1 + voiceMo*6*ph2,
+    voiceMo*12*ph2,
+    voiceMo*6*ph2  + voiceMo*6*ph3,
+    voiceMo*12*ph3,
+    voiceMo*12*ph3
+  ];
+
+  var periods = ['May 2026–Apr 2027','May 2027–Apr 2028','May 2028–Apr 2029','May 2029–Apr 2030','May 2030–Apr 2031'];
+  var cols    = 'display:grid;grid-template-columns:50px 1.4fr 1fr 1.1fr 1fr 1fr;';
+  var COLORS  = {voice:'#006f6f', plat:'#1a8c60', svc:'#5e32c0'};
+
+  var totalVoice=0, totalSvc=otfSell+pmSell+perfSell*5, grandTotal=0;
+  var rows='', chartRows='', maxYear=0;
+
+  var yearData = [];
+  for(var yr=1; yr<=5; yr++) {
+    var y1     = yr===1;
+    var voice  = voiceByYear[yr-1];
+    var svc    = (y1 ? otfSell+pmSell : 0) + perfSell;
+    var tot    = voice + svc;
+    totalVoice += voice; grandTotal += tot;
+    if(tot > maxYear) maxYear = tot;
+    yearData.push({yr,period:periods[yr-1],voice,svc,tot,y1});
+  }
+
+  // Header
+  var hdr = '<div style="'+cols+'background:#f4f6f9;border-bottom:1px solid #dde0ea;">';
+  var headers = ['Year','Period','Voice AI','Prof. Services','Total Payout','vs Prior Year'];
+  for(var h=0; h<headers.length; h++) {
+    hdr += '<div style="padding:9px 12px;font-family:monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8a90a0;">'+headers[h]+'</div>';
+  }
+  hdr += '</div>';
+
+  var prevTot = 0;
+  for(var di=0; di<yearData.length; di++) {
+    var d=yearData[di];
+    var delta = di===0 ? '—' : (d.tot-prevTot>=0?'▲':'▼')+'$'+Math.abs(Math.round(d.tot-prevTot)).toLocaleString();
+    var deltaCol = di===0?'#aaa': d.tot>=prevTot?'#1a8c60':'#b87200';
+    var bg = d.y1?'#f0f8ff':(di%2===0?'#f9fafa':'#fff');
+    rows += '<div style="'+cols+'border-bottom:1px solid #dde0ea;background:'+bg+';">'
+      +'<div style="padding:10px 12px;font-family:monospace;font-size:13px;font-weight:700;color:'+(d.y1?'#5e32c0':'#3e4558')+';">Y'+d.yr+'</div>'
+      +'<div style="padding:10px 12px;font-size:10px;color:#7a8192;font-family:monospace;">'+d.period+'</div>'
+      +'<div style="padding:10px 12px;font-family:monospace;font-size:12px;font-weight:500;color:#006f6f;">'+fmtM(d.voice)+'</div>'
+      +'<div style="padding:10px 12px;font-family:monospace;font-size:12px;font-weight:500;color:#5e32c0;">'+fmtM(d.svc)+'</div>'
+      +'<div style="padding:10px 12px;font-family:monospace;font-size:13px;font-weight:700;color:#1a1d28;">'+fmtM(d.tot)+'</div>'
+      +'<div style="padding:10px 12px;font-family:monospace;font-size:12px;font-weight:600;color:'+deltaCol+';">'+delta+'</div>'
+      +'</div>';
+    prevTot = d.tot;
+
+    // Stacked bar
+    var vW = maxYear>0?Math.round(d.voice/maxYear*100):0;
+    var sW = maxYear>0?Math.round(d.svc  /maxYear*100):0;
+    chartRows += '<div>'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+      +'<span style="font-size:11px;color:#3e4558;font-weight:600;">Y'+d.yr+' <span style="font-weight:300;color:#7a8192;font-size:10px;">'+d.period+'</span></span>'
+      +'<span style="font-family:monospace;font-size:12px;font-weight:700;color:#1a1d28;">'+fmtM(d.tot)+'</span>'
+      +'</div>'
+      +'<div style="height:24px;background:#f0f0f0;border-radius:5px;overflow:hidden;display:flex;">'
+      +'<div style="width:'+vW+'%;background:#006f6f;height:100%;"></div>'
+      +'<div style="width:'+sW+'%;background:#5e32c0;height:100%;"></div>'
+      +'</div>'
+      +'</div>';
+  }
+
+  // Total row
+  rows += '<div style="'+cols+'background:#edf9f4;border-top:2px solid #c4c9d8;">'
+    +'<div style="padding:11px 12px;font-weight:700;color:#1a1d28;grid-column:1/3;font-size:12px;">5-Year Total</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:13px;font-weight:700;color:#006f6f;">'+fmtM(totalVoice)+'</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:13px;font-weight:700;color:#5e32c0;">'+fmtM(totalSvc)+'</div>'
+    +'<div style="padding:11px 12px;font-family:monospace;font-size:16px;font-weight:800;color:#1a1d28;">'+fmtM(grandTotal)+'</div>'
+    +'<div style="padding:11px 12px;"></div>'
+    +'</div>';
+
+  var tbl=document.getElementById('s5Table');
+  if(tbl) tbl.innerHTML=hdr+rows;
+
+  var chrt=document.getElementById('s5Chart');
+  if(chrt) chrt.innerHTML=chartRows;
+
+  var lgnd=document.getElementById('s5Legend');
+  if(lgnd) lgnd.innerHTML=[
+    ['#006f6f','Voice AI'],['#5e32c0','Prof. Services']
+  ].map(function(p){
+    return '<div style="display:flex;align-items:center;gap:5px;">'
+      +'<div style="width:10px;height:10px;background:'+p[0]+';border-radius:2px;"></div>'
+      +'<span style="font-size:10px;color:#4a5068;font-family:monospace;">'+p[1]+'</span>'
+      +'</div>';
+  }).join('');
+
+  // KPI cards
+  var kpi=document.getElementById('s5KpiRow');
+  if(kpi) {
+    var kpis=[
+      ['5-Year Grand Total',    fmtM(grandTotal),        '#1a1d28'],
+      ['Voice AI (5yr)',        fmtM(totalVoice),         '#006f6f'],
+      ['Prof. Services (5yr)',  fmtM(totalSvc),           '#5e32c0'],
+    ];
+    kpi.innerHTML=kpis.map(function(k){
+      return '<div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;">'
+        +'<div style="font-family:monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#8a90a0;margin-bottom:6px;">'+k[0]+'</div>'
+        +'<div style="font-family:monospace;font-size:22px;font-weight:700;color:'+k[2]+';">'+k[1]+'</div>'
+        +'</div>';
+    }).join('');
+  }
+}
+
+
+
+</script>
+</body>
+</html>
