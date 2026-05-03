@@ -1889,15 +1889,18 @@ function renderSection5(voiceRateP2) {
   var perfSell = sell(SVC_PERF_COST);
 
   // Voice payout by calendar year (May–Apr contract years)
-  // Y1: May 2026–Apr 2027 = 6mo ph1 + 6mo ph2
+  // Phase 1 (May–Oct 2026, 6mo): ADCB payout = $0 — covered by legacy contract
+  // Phase 2 (Nov 2026–Oct 2028, 24mo): voiceRateP2 − legacy credit
+  // Phase 3 (Nov 2028–Apr 2031, 30mo): full voiceRateP2
+  // Y1: May 2026–Apr 2027 = 6mo ph1 ($0) + 6mo ph2
   // Y2: May 2027–Apr 2028 = 12mo ph2
   // Y3: May 2028–Apr 2029 = 6mo ph2 + 6mo ph3
   // Y4: May 2029–Apr 2030 = 12mo ph3
   // Y5: May 2030–Apr 2031 = 12mo ph3
   var voiceByYear = [
-    voiceMo*6*ph1 + voiceMo*6*ph2,
+    voiceMo*6*0   + voiceMo*6*ph2,   // Y1: Phase 1 = $0 (legacy covered), Phase 2 × 6mo
     voiceMo*12*ph2,
-    voiceMo*6*ph2  + voiceMo*6*ph3,
+    voiceMo*6*ph2 + voiceMo*6*ph3,
     voiceMo*12*ph3,
     voiceMo*12*ph3
   ];
