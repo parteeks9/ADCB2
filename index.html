@@ -551,6 +551,16 @@
   <div class="hbadges">
     <div class="hbadge hi">ADCB Proposal</div>
     <div class="hbadge">Confidential · Apr 2026</div>
+    <button onclick="generateClientSummary()" style="
+      display:flex;align-items:center;gap:7px;
+      font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+      padding:6px 14px;border-radius:6px;cursor:pointer;
+      border:1px solid rgba(26,140,96,0.5);background:rgba(26,140,96,0.08);
+      color:var(--green);font-weight:600;transition:background 0.2s;
+    " onmouseover="this.style.background='rgba(26,140,96,0.16)'" onmouseout="this.style.background='rgba(26,140,96,0.08)'">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h10v10H2z" stroke="currentColor" stroke-width="1.4" fill="none" rx="1"/><path d="M4 5h6M4 7h6M4 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Client Summary
+    </button>
     <button onclick="downloadPDF()" id="pdfBtn" style="
       display:flex;align-items:center;gap:7px;
       font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
@@ -2004,6 +2014,224 @@ function renderSection5(voiceRateP2) {
   }
 }
 
+
+
+// ── ADCB CLIENT SUMMARY (no internal pricing) ─────────────────────────────────
+function generateClientSummary() {
+  var c   = cfg();
+  var r   = compute(c);
+  var margin  = c.margin;
+  var s4disc  = parseFloat((document.getElementById('rng-s4disc') || {value:'0'}).value) / 100;
+
+  // Voice rates (effective per-call price ADCB pays)
+  var LEGACY  = 0.071;
+  var ph1Rate = LEGACY;
+  var ph2Rate = parseFloat(Math.max(0, c.voiceRateP2 - LEGACY).toFixed(4));
+  var ph3Rate = c.voiceRateP2;
+
+  // Professional services sell prices (what ADCB pays)
+  function sellPrice(baseCost, applyDisc) {
+    var discCost = applyDisc ? baseCost * (1 - s4disc) : baseCost;
+    return margin < 1 ? discCost / (1 - margin) : discCost;
+  }
+  var otfSell  = sellPrice(SVC_OTF_COST,  true);
+  var pmSell   = sellPrice(SVC_PM_COST,   false);
+  var perfSell = sellPrice(SVC_PERF_COST, true);
+
+  // YoY voice payout
+  var voiceMo = c.voiceTot;
+  var voiceByYear = [
+    voiceMo*6*0    + voiceMo*6*ph2Rate,   // Y1: Ph1=$0 + 6mo Ph2
+    voiceMo*12*ph2Rate,
+    voiceMo*6*ph2Rate + voiceMo*6*ph3Rate,
+    voiceMo*12*ph3Rate,
+    voiceMo*12*ph3Rate
+  ];
+  var svcByYear = [
+    otfSell + pmSell + perfSell,  // Y1: all one-time + annual
+    perfSell, perfSell, perfSell, perfSell
+  ];
+  var periods = ['May 2026 – Apr 2027','May 2027 – Apr 2028','May 2028 – Apr 2029',
+                 'May 2029 – Apr 2030','May 2030 – Apr 2031'];
+
+  function fmtD(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  function fmtR(r) { return '$' + (+r).toFixed(3); }
+
+  // Channel names for voice volume section
+  var chanMap = [
+    {id:'chk-pbi', rng:'rng-pbi', name:'Phone Banking Inbound'},
+    {id:'chk-out', rng:'rng-out', name:'Outbound Calls'},
+    {id:'chk-cin', rng:'rng-cin', name:'Collections Inbound'},
+    {id:'chk-cout',rng:'rng-cout',name:'Collections Outbound'},
+  ];
+  var activeChans = chanMap.filter(function(ch) {
+    var el = document.getElementById(ch.id);
+    return el && el.checked;
+  });
+
+  var totalVoice5yr = voiceByYear.reduce(function(a,b){return a+b;},0);
+  var totalSvc5yr   = otfSell + pmSell + perfSell*SVC_YEARS;
+  var grand5yr      = totalVoice5yr + totalSvc5yr;
+
+  var html = '<!DOCTYPE html><html lang="en"><head>'
+    + '<meta charset="UTF-8"/>'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1"/>'
+    + '<title>Uniphore · ADCB Commercial Summary</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;}'
+    + 'body{font-family:"DM Sans",sans-serif;color:#1a1d28;background:#fff;padding:48px;max-width:900px;margin:0 auto;}'
+    + '@media print{body{padding:28px;} .no-print{display:none!important;} @page{margin:1.5cm;size:A4;}}'
+    + 'h1{font-family:"Syne",sans-serif;font-size:26px;font-weight:800;letter-spacing:-0.02em;}'
+    + 'h2{font-family:"Syne",sans-serif;font-size:14px;font-weight:700;letter-spacing:-0.01em;margin-bottom:10px;}'
+    + '.mono{font-family:"DM Mono",monospace;}'
+    + 'table{width:100%;border-collapse:collapse;font-size:12px;}'
+    + 'th{background:#f4f6f9;padding:8px 12px;text-align:left;font-family:"DM Mono",monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#7a8192;border-bottom:2px solid #dde0ea;font-weight:500;}'
+    + 'th.r{text-align:right;}'
+    + 'td{padding:9px 12px;border-bottom:1px solid #eee;color:#3e4558;vertical-align:top;}'
+    + 'td.r{text-align:right;font-family:"DM Mono",monospace;font-size:12px;}'
+    + 'td.bold{font-weight:700;color:#1a1d28;}'
+    + 'td.green{color:#1a8c60;font-family:"DM Mono",monospace;font-weight:600;}'
+    + 'td.teal{color:#006f6f;font-family:"DM Mono",monospace;font-weight:600;}'
+    + 'td.purple{color:#5e32c0;font-family:"DM Mono",monospace;font-weight:600;}'
+    + 'td.total{font-family:"DM Mono",monospace;font-weight:700;font-size:13px;color:#1a1d28;}'
+    + 'tr.subtotal td{background:#f0f8ff;font-weight:600;border-top:1px solid #c4c9d8;}'
+    + 'tr.grand td{background:#1a1d28;color:#fff!important;font-weight:700;}'
+    + 'tr.grand td.mono{font-family:"DM Mono",monospace;}'
+    + '.section{margin-bottom:28px;}'
+    + '.section-divider{height:2px;background:linear-gradient(90deg,#006f6f,#1a8c60);border-radius:2px;margin-bottom:14px;}'
+    + '.tag{display:inline-block;font-family:"DM Mono",monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;}'
+    + '.tag-zero{background:#edf9f4;color:#1a8c60;border:1px solid rgba(26,140,96,0.3);}'
+    + '.tag-ph{background:#f4f6f9;color:#7a8192;border:1px solid #dde0ea;}'
+    + '.note{font-size:10px;color:#7a8192;margin-top:6px;line-height:1.5;padding:6px 10px;background:#f9fafb;border-left:2px solid #dde0ea;border-radius:0 4px 4px 0;}'
+    + '.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;}'
+    + '.kpi{background:#f4f6f9;border-radius:8px;padding:14px 16px;border:1px solid #dde0ea;}'
+    + '.kpi-lbl{font-family:"DM Mono",monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#7a8192;margin-bottom:5px;}'
+    + '.kpi-val{font-family:"DM Mono",monospace;font-size:20px;font-weight:700;color:#1a1d28;}'
+    + '.kpi-val.teal{color:#006f6f;} .kpi-val.green{color:#1a8c60;} .kpi-val.purple{color:#5e32c0;}'
+    + '</style></head><body>';
+
+  // ── HEADER ──────────────────────────────────────────────────────────────────
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #1a1d28;">'
+    + '<div>'
+    + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#006f6f;margin-bottom:6px;">UNIPHORE · Commercial Proposal</div>'
+    + '<h1>Voice AI — Commercial Summary</h1>'
+    + '<div style="font-size:12px;color:#7a8192;margin-top:4px;">Abu Dhabi Commercial Bank &nbsp;·&nbsp; Contract Term: 1 May 2026 – 30 Apr 2031 (5 Years)</div>'
+    + '</div>'
+    + '<div style="text-align:right;">'
+    + '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:#7a8192;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Generated</div>'
+    + '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:#1a1d28;">'
+    + new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
+    + '</div>'
+    + '<div style="font-size:10px;color:#7a8192;margin-top:4px;">Confidential</div>'
+    + '</div>'
+    + '</div>';
+
+  // ── KPI STRIP ────────────────────────────────────────────────────────────────
+  html += '<div class="kpi-row">'
+    + '<div class="kpi"><div class="kpi-lbl">5-Year Total Investment</div><div class="kpi-val">' + fmtD(grand5yr) + '</div></div>'
+    + '<div class="kpi"><div class="kpi-lbl">Voice AI (5 Years)</div><div class="kpi-val teal">' + fmtD(totalVoice5yr) + '</div></div>'
+    + '<div class="kpi"><div class="kpi-lbl">Professional Services (5 Years)</div><div class="kpi-val green">' + fmtD(totalSvc5yr) + '</div></div>'
+    + '</div>';
+
+  // ── SECTION 1: VOICE AI SCOPE ─────────────────────────────────────────────
+  html += '<div class="section"><div class="section-divider"></div><h2>Voice AI — Scope &amp; Channels</h2>'
+    + '<table><thead><tr><th>Channel</th><th class="r">Monthly Volume</th><th class="r">Annual Volume</th></tr></thead><tbody>';
+  activeChans.forEach(function(ch) {
+    var vol = parseFloat(document.getElementById(ch.rng).value)||0;
+    html += '<tr><td class="bold">'+ch.name+'</td><td class="r">' + vol.toLocaleString() + '</td><td class="r">' + (vol*12).toLocaleString() + '</td></tr>';
+  });
+  html += '<tr class="subtotal"><td class="bold">Total</td><td class="r total">' + voiceMo.toLocaleString() + '</td><td class="r total">' + (voiceMo*12).toLocaleString() + '</td></tr>'
+    + '</tbody></table></div>';
+
+  // ── SECTION 2: VOICE PRICING PHASES ──────────────────────────────────────
+  html += '<div class="section"><div class="section-divider"></div><h2>Voice AI — Pricing by Phase</h2>'
+    + '<table><thead><tr><th>Phase</th><th>Period</th><th class="r">Duration</th><th class="r">Rate / Call</th><th class="r">Basis</th></tr></thead><tbody>'
+    + '<tr>'
+    +   '<td class="bold">Phase 1 — Special Offer</td>'
+    +   '<td>1 May 2026 – 31 Oct 2026</td>'
+    +   '<td class="r">6 months</td>'
+    +   '<td class="r"><span class="tag tag-zero">$0 payout</span></td>'
+    +   '<td class="r" style="color:#7a8192;">Covered by existing contract</td>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td class="bold">Phase 2 — Transition</td>'
+    +   '<td>1 Nov 2026 – 31 Oct 2028</td>'
+    +   '<td class="r">24 months</td>'
+    +   '<td class="r teal">' + fmtR(ph2Rate) + '</td>'
+    +   '<td class="r" style="color:#7a8192;">Net of legacy credit</td>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td class="bold">Phase 3 — Full Contract</td>'
+    +   '<td>1 Nov 2028 – 30 Apr 2031</td>'
+    +   '<td class="r">30 months</td>'
+    +   '<td class="r teal">' + fmtR(ph3Rate) + '</td>'
+    +   '<td class="r" style="color:#7a8192;">Standard Voice AI rate</td>'
+    + '</tr>'
+    + '</tbody></table>'
+    + '<p class="note">Phase 1: ADCB continues on existing Self Serve Legacy contract at $0.071/call — no incremental payout to Uniphore for Voice AI. Phase 2 rate = Voice AI rate minus $0.071 legacy credit.</p>'
+    + '</div>';
+
+  // ── SECTION 3: PROFESSIONAL SERVICES ─────────────────────────────────────
+  html += '<div class="section"><div class="section-divider"></div><h2>Professional Services</h2>'
+    + '<table><thead><tr><th>Service</th><th>Type</th><th>Scope</th><th class="r">ADCB Investment</th></tr></thead><tbody>'
+    + '<tr><td class="bold">Deployment &amp; Integration</td><td><span class="tag tag-ph">One-Time</span></td><td>English · Hindi · Arabic</td><td class="r purple">' + fmtD(otfSell) + '</td></tr>'
+    + '<tr><td class="bold">Partner Project Management</td><td><span class="tag tag-ph">One-Time</span></td><td>Implementation oversight</td><td class="r purple">' + fmtD(pmSell) + '</td></tr>'
+    + '<tr><td class="bold">AI Performance Services</td><td><span class="tag tag-ph">Annual</span></td><td>Fine-tuning &amp; optimisation · 12 months</td><td class="r purple">' + fmtD(perfSell) + ' / yr</td></tr>'
+    + '<tr class="subtotal"><td class="bold" colspan="3">Total Professional Services (5 Years)</td><td class="r total">' + fmtD(totalSvc5yr) + '</td></tr>'
+    + '</tbody></table></div>';
+
+  // ── SECTION 4: YoY CONSOLIDATED TABLE ────────────────────────────────────
+  html += '<div class="section"><div class="section-divider"></div><h2>Total Investment — Year on Year</h2>'
+    + '<table><thead><tr>'
+    + '<th>Year</th><th>Period</th>'
+    + '<th class="r">Voice AI</th>'
+    + '<th class="r">Prof. Services</th>'
+    + '<th class="r">Annual Total</th>'
+    + '<th class="r">Cumulative</th>'
+    + '</tr></thead><tbody>';
+
+  var cumulative = 0;
+  for(var yr=0; yr<5; yr++) {
+    var ytot = voiceByYear[yr] + svcByYear[yr];
+    cumulative += ytot;
+    var isY1 = yr===0;
+    html += '<tr' + (isY1?' style="background:#f9f6ff;"':'') + '>'
+      + '<td class="bold mono">' + (isY1?'<span style="color:#5e32c0;">':'') + 'Y'+(yr+1) + (isY1?'</span>':'') + '</td>'
+      + '<td style="font-size:11px;color:#7a8192;">' + periods[yr] + '</td>'
+      + '<td class="r teal">' + fmtD(voiceByYear[yr]) + '</td>'
+      + '<td class="r purple">' + fmtD(svcByYear[yr]) + '</td>'
+      + '<td class="r bold">' + fmtD(ytot) + '</td>'
+      + '<td class="r" style="color:#7a8192;">' + fmtD(cumulative) + '</td>'
+      + '</tr>';
+  }
+  html += '<tr class="grand">'
+    + '<td class="bold mono" colspan="2" style="color:#fff;">5-Year Total</td>'
+    + '<td class="r mono" style="color:#6ee7e7;">' + fmtD(totalVoice5yr) + '</td>'
+    + '<td class="r mono" style="color:#b9a0ff;">' + fmtD(totalSvc5yr) + '</td>'
+    + '<td class="r mono" style="color:#fff;font-size:14px;">' + fmtD(grand5yr) + '</td>'
+    + '<td class="r mono" style="color:#aaa;">—</td>'
+    + '</tr>'
+    + '</tbody></table></div>';
+
+  // ── FOOTER ───────────────────────────────────────────────────────────────
+  html += '<div style="margin-top:32px;padding-top:14px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">'
+    + '<div style="font-size:10px;color:#7a8192;">This document is confidential and prepared exclusively for Abu Dhabi Commercial Bank. All figures in USD.</div>'
+    + '<div style="font-size:10px;color:#7a8192;">Uniphore Technologies · ' + new Date().getFullYear() + '</div>'
+    + '</div>';
+
+  // ── PRINT BUTTON ─────────────────────────────────────────────────────────
+  html += '<div class="no-print" style="margin-top:24px;text-align:center;">'
+    + '<button onclick="window.print()" style="font-family:\'DM Mono\',sans-serif;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:10px 28px;border:1px solid #006f6f;background:#edfafa;color:#006f6f;border-radius:6px;cursor:pointer;">⬇ Save as PDF</button>'
+    + '</div>';
+
+  html += '</body></html>';
+
+  // Open in new tab
+  var w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
 
 
 </script>
